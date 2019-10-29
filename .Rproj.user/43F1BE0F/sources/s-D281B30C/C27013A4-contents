@@ -1,0 +1,1019 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+	‘/private/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T/Rtmpuc4iXU/downloaded_packages’
+> group_by(data_all, game) %>% summarise(score = mean(points_win))
+Error: could not find function "%>%"
+> library(dyplr)
+Error in library(dyplr) : there is no package called ‘dyplr’
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> group_by(data_all, game) %>% summarise(score = mean(points_win))
+# A tibble: 3 x 2
+     game     score
+    <chr>     <dbl>
+1     fwg 0.6073077
+2 numbers 0.4238462
+3     rps 0.5046154
+> group_by(data_all, game) %>% summarise(score = sum(points_win))
+# A tibble: 3 x 2
+     game score
+    <chr> <dbl>
+1     fwg  1579
+2 numbers  1102
+3     rps  1312
+> summarise(prolific_id)
+Error in summarise(prolific_id) : object 'prolific_id' not found
+> summarise(data_all$prolific_id)
+Error in UseMethod("summarise_") : 
+  no applicable method for 'summarise_' applied to an object of class "character"
+> data_all %>% group_by(prolific_id,game) %>% summarise(count=n())
+# A tibble: 156 x 3
+# Groups:   prolific_id [?]
+                prolific_id    game count
+                      <chr>   <chr> <int>
+ 1 537d1b9ffdf99b2275a4019c     fwg    50
+ 2 537d1b9ffdf99b2275a4019c numbers    50
+ 3 537d1b9ffdf99b2275a4019c     rps    50
+ 4 56c9bd6310a82f000dffd6af     fwg    50
+ 5 56c9bd6310a82f000dffd6af numbers    50
+ 6 56c9bd6310a82f000dffd6af     rps    50
+ 7 56e60e39f7957b000b18e37b     fwg    50
+ 8 56e60e39f7957b000b18e37b numbers    50
+ 9 56e60e39f7957b000b18e37b     rps    50
+10 56f28d3aed0cf6000691111e     fwg    50
+# ... with 146 more rows
+> data_all %>% group_by(prolific_id,game) %>% summarise(sum(points_win))
+# A tibble: 156 x 3
+# Groups:   prolific_id [?]
+                prolific_id    game `sum(points_win)`
+                      <chr>   <chr>             <dbl>
+ 1 537d1b9ffdf99b2275a4019c     fwg                45
+ 2 537d1b9ffdf99b2275a4019c numbers                21
+ 3 537d1b9ffdf99b2275a4019c     rps                21
+ 4 56c9bd6310a82f000dffd6af     fwg                36
+ 5 56c9bd6310a82f000dffd6af numbers                12
+ 6 56c9bd6310a82f000dffd6af     rps                36
+ 7 56e60e39f7957b000b18e37b     fwg                31
+ 8 56e60e39f7957b000b18e37b numbers                11
+ 9 56e60e39f7957b000b18e37b     rps                35
+10 56f28d3aed0cf6000691111e     fwg                25
+# ... with 146 more rows
+> data_sum <- data_all %>% group_by(prolific_id,game) %>% summarise(sum(points_win))
+> head(data_sum)
+# A tibble: 6 x 3
+# Groups:   prolific_id [2]
+               prolific_id    game `sum(points_win)`
+                     <chr>   <chr>             <dbl>
+1 537d1b9ffdf99b2275a4019c     fwg                45
+2 537d1b9ffdf99b2275a4019c numbers                21
+3 537d1b9ffdf99b2275a4019c     rps                21
+4 56c9bd6310a82f000dffd6af     fwg                36
+5 56c9bd6310a82f000dffd6af numbers                12
+6 56c9bd6310a82f000dffd6af     rps                36
+> View(data_sum)
+> colnames(data_sum)[colnames(data_sum)=="sum(points_win)"] <- "num_wins"
+> group_by(data_sum, game) %>% summarise(score = mean(num_wins))
+# A tibble: 3 x 2
+     game    score
+    <chr>    <dbl>
+1     fwg 30.36538
+2 numbers 21.19231
+3     rps 25.23077
+> library("ggpubr")
+Error in library("ggpubr") : there is no package called ‘ggpubr’
+> ggdensity(data_sum$num_wins, 
++           main = "Density plot of number of wins",
++           xlab = "Number of wins")
+Error: could not find function "ggdensity"
+> install("ggpubr")
+Error: could not find function "install"
+> package("ggpubr")
+Error: could not find function "package"
+> install.packages("ggpubr")
+also installing the dependencies ‘scales’, ‘viridisLite’, ‘withr’, ‘ggplot2’, ‘ggrepel’, ‘ggsci’, ‘tidyr’, ‘cowplot’, ‘ggsignif’
+
+
+  There are binary versions available but the source versions are later:
+            binary source needs_compilation
+viridisLite  0.2.0  0.3.0             FALSE
+withr        2.1.1  2.1.2             FALSE
+ggplot2      2.2.1  3.0.0             FALSE
+ggrepel      0.7.0  0.8.0              TRUE
+ggsci          2.8    2.9             FALSE
+tidyr        0.7.2  0.8.1              TRUE
+cowplot      0.9.2  0.9.3             FALSE
+ggpubr       0.1.6  0.1.7             FALSE
+
+Do you want to install from sources the packages which need compilation?
+y/n: n
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/scales_0.5.0.tgz'
+Content type 'application/x-gzip' length 336683 bytes (328 KB)
+==================================================
+downloaded 328 KB
+
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/ggrepel_0.7.0.tgz'
+Content type 'application/x-gzip' length 675838 bytes (659 KB)
+==================================================
+downloaded 659 KB
+
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/tidyr_0.7.2.tgz'
+Content type 'application/x-gzip' length 582444 bytes (568 KB)
+==================================================
+downloaded 568 KB
+
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/ggsignif_0.4.0.tgz'
+Content type 'application/x-gzip' length 40583 bytes (39 KB)
+==================================================
+downloaded 39 KB
+
+
+The downloaded binary packages are in
+	/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T//Rtmpuc4iXU/downloaded_packages
+installing the source packages ‘viridisLite’, ‘withr’, ‘ggplot2’, ‘ggsci’, ‘cowplot’, ‘ggpubr’
+
+trying URL 'https://cran.rstudio.com/src/contrib/viridisLite_0.3.0.tar.gz'
+Content type 'application/x-gzip' length 44019 bytes (42 KB)
+==================================================
+downloaded 42 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/withr_2.1.2.tar.gz'
+Content type 'application/x-gzip' length 53578 bytes (52 KB)
+==================================================
+downloaded 52 KB
+
+trying URL 'https://cran.rstudio.com/src/contrib/ggplot2_3.0.0.tar.gz'
+Content type 'application/x-gzip' length 2847050 bytes (2.7 MB)
+==================================================
+downloaded 2.7 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/ggsci_2.9.tar.gz'
+Content type 'application/x-gzip' length 2873033 bytes (2.7 MB)
+==================================================
+downloaded 2.7 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/cowplot_0.9.3.tar.gz'
+Content type 'application/x-gzip' length 2364246 bytes (2.3 MB)
+==================================================
+downloaded 2.3 MB
+
+trying URL 'https://cran.rstudio.com/src/contrib/ggpubr_0.1.7.tar.gz'
+Content type 'application/x-gzip' length 1805789 bytes (1.7 MB)
+==================================================
+downloaded 1.7 MB
+
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘viridisLite’ ...
+** package ‘viridisLite’ successfully unpacked and MD5 sums checked
+** R
+** data
+*** moving datasets to lazyload DB
+** preparing package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** testing if installed package can be loaded
+* DONE (viridisLite)
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘withr’ ...
+** package ‘withr’ successfully unpacked and MD5 sums checked
+** R
+** inst
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+* DONE (withr)
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘ggplot2’ ...
+** package ‘ggplot2’ successfully unpacked and MD5 sums checked
+** R
+** data
+*** moving datasets to lazyload DB
+** inst
+** preparing package for lazy loading
+** help
+*** installing help indices
+*** copying figures
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+* DONE (ggplot2)
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘ggsci’ ...
+** package ‘ggsci’ successfully unpacked and MD5 sums checked
+** R
+** inst
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+* DONE (ggsci)
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘cowplot’ ...
+** package ‘cowplot’ successfully unpacked and MD5 sums checked
+** R
+** inst
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** installing vignettes
+** testing if installed package can be loaded
+* DONE (cowplot)
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘ggpubr’ ...
+** package ‘ggpubr’ successfully unpacked and MD5 sums checked
+** R
+** data
+*** moving datasets to lazyload DB
+** inst
+** preparing package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+* DONE (ggpubr)
+
+The downloaded source packages are in
+	‘/private/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T/Rtmpuc4iXU/downloaded_packages’
+> library("ggpubr")
+Loading required package: ggplot2
+Loading required package: magrittr
+> ggdensity(data_sum$num_wins, 
++           main = "Density plot of number of wins",
++           xlab = "Number of wins")
+> ggboxplot(data_sum, x = "games", y = "wins", 
++           color = "group", palette = c("#00AFBB", "#E7B800"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+Error in `[.data.frame`(data, , x) : undefined columns selected
+> ggboxplot(data_sum$num_wins, x = "games", y = "wins", 
++           color = "group", palette = c("#00AFBB", "#E7B800"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+Error in data[, x] : incorrect number of dimensions
+> ggboxplot(data_sum$num_wins, x = "games", y = "wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+Error in data[, x] : incorrect number of dimensions
+> ggboxplot(data_sum$num_wins, x = "games", y = "wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07),
++           order = c("rps", "wfg","numbers"),
+Error: unexpected symbol in:
+"          color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07),
+          order = c("rps"
+>           ylab = "Wins", xlab = "Games")
+Error: unexpected ',' in "          ylab = "Wins","
+> ggboxplot(data_sum$num_wins, x = "games", y = "wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+Error in data[, x] : incorrect number of dimensions
+> ggboxplot(data_sum, x = "games", y = "wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+Error in `[.data.frame`(data, , x) : undefined columns selected
+> library("ggpubr")
+> ggboxplot(data_sum, x = "game", y = "num_wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
++           order = c("rps", "wfg","numbers"),
++           ylab = "Wins", xlab = "Games")
+> ggboxplot(data_sum, x = "game", y = "num_wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
++           order = c("rps", "fwg","numbers"),
++           ylab = "Wins", xlab = "Games")
+> ggline(my_data, x = "game", y = "num_wins", 
++        add = c("mean_se", "jitter"), 
++        order = c("rps", "fwg","numbers"),
++        ylab = "Number of Wins", xlab = "Games")
+Error in ggline(my_data, x = "game", y = "num_wins", add = c("mean_se",  : 
+  object 'my_data' not found
+> ggline(data_sum, x = "game", y = "num_wins", 
++        add = c("mean_se", "jitter"), 
++        order = c("rps", "fwg","numbers"),
++        ylab = "Number of Wins", xlab = "Games")
+> data_propwin <- data_all %>% group_by(prolific_id,game) %>% summarise(mean(points_win))
+> head(data-propwin)
+Error in head(data - propwin) : object 'propwin' not found
+> head(data_propwin)
+# A tibble: 6 x 3
+# Groups:   prolific_id [2]
+               prolific_id    game `mean(points_win)`
+                     <chr>   <chr>              <dbl>
+1 537d1b9ffdf99b2275a4019c     fwg               0.90
+2 537d1b9ffdf99b2275a4019c numbers               0.42
+3 537d1b9ffdf99b2275a4019c     rps               0.42
+4 56c9bd6310a82f000dffd6af     fwg               0.72
+5 56c9bd6310a82f000dffd6af numbers               0.24
+6 56c9bd6310a82f000dffd6af     rps               0.72
+> View(data_propwin)
+Warning message:
+In as.POSIXlt.POSIXct(x, tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+> ggline(data_propwin, x = "game", y = "num_wins", 
++        add = c("mean_se", "jitter"), 
++        order = c("rps", "fwg","numbers"),
++        ylab = "Number of Wins", xlab = "Games")
+Error: Column `num_wins` not found
+> colnames(data_sum)[colnames(data_sum)=="sum(points_win)"] <- "prop_wins"
+> colnames(data_sum)[colnames(data_sum)=="sum(points_win)"] <- "sum_wins"
+> colnames(data_propwin)[colnames(data_sum)=="sum(points_win)"] <- "prop_wins"
+> colnames(data_propwin)[colnames(data_sum)=="mean(points_win)"] <- "prop_wins"
+> colnames(data_propwin)[colnames(data_propwin)=="mean(points_win)"] <- "prop_wins"
+> ggline(data_propwin, x = "game", y = "prop_wins", 
++        add = c("mean_se", "jitter"), 
++        order = c("rps", "fwg","numbers"),
++        ylab = "Percentage of  Wins", xlab = "Games")
+> ggboxplot(data_propwin, x = "game", y = "prop_wins", 
++           color = "game", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
++           order = c("rps", "fwg","numbers"),
++           ylab = "Percentage of Wins", xlab = "Games")
+> res.aov <- aov(prop_wins ~ game, data = data_propwin)
+> summary(res.aov)
+             Df Sum Sq Mean Sq F value   Pr(>F)    
+game          2  0.879  0.4396   8.679 0.000269 ***
+Residuals   153  7.750  0.0507                     
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> rep.aov <- aov(prop_wins ~ game + Error(prolific_id/game), data=data_propwin)
+> summary(rep.aov)
+
+Error: prolific_id
+          Df Sum Sq Mean Sq F value Pr(>F)
+Residuals 51  4.646 0.09109               
+
+Error: prolific_id:game
+           Df Sum Sq Mean Sq F value Pr(>F)    
+game        2 0.8793  0.4396   14.45  3e-06 ***
+Residuals 102 3.1045  0.0304                   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> library(lmerTest)
+Error in library(lmerTest) : there is no package called ‘lmerTest’
+> fit <- lmer(prop_wins ~ game + (1|prolific_id), data=data_propwin)
+Error: could not find function "lmer"
+> anova(fit)
+Error in anova(fit) : object 'fit' not found
+> library(lmerTest)
+Error in library(lmerTest) : there is no package called ‘lmerTest’
+> install.packages(lmertest)
+Error in install.packages : object 'lmertest' not found
+> install.packages(lmerTest)
+Error in install.packages : object 'lmerTest' not found
+> install.packages("PairedData")
+also installing the dependencies ‘lmom’, ‘gld’
+
+
+  There is a binary version available but the source version is later:
+           binary source needs_compilation
+PairedData  1.1.0  1.1.1             FALSE
+
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/lmom_2.6.tgz'
+Content type 'application/x-gzip' length 236109 bytes (230 KB)
+==================================================
+downloaded 230 KB
+
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/gld_2.4.1.tgz'
+Content type 'application/x-gzip' length 146638 bytes (143 KB)
+==================================================
+downloaded 143 KB
+
+
+The downloaded binary packages are in
+	/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T//Rtmpuc4iXU/downloaded_packages
+installing the source package ‘PairedData’
+
+trying URL 'https://cran.rstudio.com/src/contrib/PairedData_1.1.1.tar.gz'
+Content type 'application/x-gzip' length 47263 bytes (46 KB)
+==================================================
+downloaded 46 KB
+
+Warning in strptime(xx, f <- "%Y-%m-%d %H:%M:%OS", tz = tz) :
+  unknown timezone 'zone/tz/2018c.1.0/zoneinfo/Europe/London'
+* installing *source* package ‘PairedData’ ...
+** package ‘PairedData’ successfully unpacked and MD5 sums checked
+** R
+** data
+** preparing package for lazy loading
+Warning: package ‘gld’ was built under R version 3.3.2
+Creating a new generic function for ‘summary’ in package ‘PairedData’
+Creating a generic function for ‘plot’ from package ‘graphics’ in package ‘PairedData’
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+Warning: package ‘gld’ was built under R version 3.3.2
+* DONE (PairedData)
+
+The downloaded source packages are in
+	‘/private/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T/Rtmpuc4iXU/downloaded_packages’
+> # Subset rps data
+> rps <- subset(data_propwin,  game == "rps", prop_wins,
++                  drop = TRUE)
+Warning message:
+drop ignored 
+> # Subset fwg data
+> fwg <- subset(data_propwin,  game == "fwg", prop_wins,
++                  drop = TRUE)
+Warning message:
+drop ignored 
+> library(PairedData)
+Loading required package: MASS
+
+Attaching package: ‘MASS’
+
+The following object is masked from ‘package:dplyr’:
+
+    select
+
+Loading required package: gld
+Loading required package: mvtnorm
+Loading required package: lattice
+
+Attaching package: ‘PairedData’
+
+The following object is masked from ‘package:base’:
+
+    summary
+
+Warning message:
+package ‘gld’ was built under R version 3.3.2 
+> pd <- paired(rps, fwg)
+> plot(pd, type = "profile") + theme_bw()
+> plot(pd, type = "profile") 
+> # Subset numbers data
+> numbers <- subset(data_propwin,  game == "numbers", prop_wins,
++                  drop = TRUE)
+Warning message:
+drop ignored 
+> pd2 <- paired(fwg, numbers)
+> plot(pd2, type = "profile")
+> res <- wilcox.test(prop_wins ~ game, data = data_propwin, paired = TRUE)
+Error in wilcox.test.formula(prop_wins ~ game, data = data_propwin, paired = TRUE) : 
+  grouping factor must have exactly 2 levels
+> res
+Error: object 'res' not found
+> res <- wilcox.test(rps, fwg, paired = TRUE)
+Error in wilcox.test.default(rps, fwg, paired = TRUE) : 
+  'x' must be numeric
+> res
+Error: object 'res' not found
+> View(rps)
+> View(fwg)
+> res <- wilcox.test(rps, fwg, paired = TRUE)
+Error in wilcox.test.default(rps, fwg, paired = TRUE) : 
+  'x' must be numeric
+> describe(rps)
+Error: could not find function "describe"
+> summarise(rps)
+data frame with 0 columns and 0 rows
+> head(rps)
+# A tibble: 6 x 1
+  prop_wins
+      <dbl>
+1      0.42
+2      0.72
+3      0.70
+4      0.50
+5      0.82
+6      0.76
+> head(fwg)
+# A tibble: 6 x 1
+  prop_wins
+      <dbl>
+1      0.90
+2      0.72
+3      0.62
+4      0.50
+5      0.84
+6      0.68
+> rps <- as.numeric(rps)
+Error: (list) object cannot be coerced to type 'double'
+> v_rps <- as.numeric(rps)
+Error: (list) object cannot be coerced to type 'double'
+> v_rps <- as.numeric(rps$prop_wins)
+> v_fwg <- as.numeric(fwg$prop_wins)
+> res <- wilcox.test(v_rps, v_fwg, paired = TRUE)
+Warning messages:
+1: In wilcox.test.default(v_rps, v_fwg, paired = TRUE) :
+  cannot compute exact p-value with ties
+2: In wilcox.test.default(v_rps, v_fwg, paired = TRUE) :
+  cannot compute exact p-value with zeroes
+> res
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_rps and v_fwg
+V = 293.5, p-value = 0.002559
+alternative hypothesis: true location shift is not equal to 0
+
+> v_numbers <- as.numeric(numbers$prop_wins)
+> res2 <- wilcox.test(v_fwg, v_numbers, paired = TRUE)
+> res2
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_fwg and v_numbers
+V = 1091, p-value = 1.22e-05
+alternative hypothesis: true location shift is not equal to 0
+
+> > group_by(data_propwin, game) %>% summarise(winRate = mean(prop_wins))
+Error: unexpected '>' in ">"
+> group_by(data_propwin, game) %>% summarise(winRate = mean(prop_wins))
+# A tibble: 3 x 2
+     game   winRate
+    <chr>     <dbl>
+1     fwg 0.6073077
+2 numbers 0.4238462
+3     rps 0.5046154
+> wilcox.test(v_rps, mu = 1/3, alternative = "two.sided")
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_rps
+V = 1242, p-value = 4.828e-07
+alternative hypothesis: true location is not equal to 0.3333333
+
+> wilcox.test(v_wfg, mu = 1/3, alternative = "two.sided")
+Error in wilcox.test(v_wfg, mu = 1/3, alternative = "two.sided") : 
+  object 'v_wfg' not found
+> wilcox.test(v_fwg, mu = 1/3, alternative = "two.sided")
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_fwg
+V = 1326, p-value = 6.721e-09
+alternative hypothesis: true location is not equal to 0.3333333
+
+> wilcox.test(v_numbers, mu = 1/3, alternative = "two.sided")
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_numbers
+V = 859, p-value = 0.1226
+alternative hypothesis: true location is not equal to 0.3333333
+
+> wilcox.test(v_numbers, mu = 1/5, alternative = "two.sided")
+
+	Wilcoxon signed rank test with continuity correction
+
+data:  v_numbers
+V = 1107.5, p-value = 8.626e-07
+alternative hypothesis: true location is not equal to 0.2
+
+Warning messages:
+1: In wilcox.test.default(v_numbers, mu = 1/5, alternative = "two.sided") :
+  cannot compute exact p-value with ties
+2: In wilcox.test.default(v_numbers, mu = 1/5, alternative = "two.sided") :
+  cannot compute exact p-value with zeroes
+> binom.test(25, 52, 0.333)
+
+	Exact binomial test
+
+data:  25 and 52
+number of successes = 25, number of trials = 52, p-value = 0.02732
+alternative hypothesis: true probability of success is not equal to 0.333
+95 percent confidence interval:
+ 0.3401192 0.6236865
+sample estimates:
+probability of success 
+             0.4807692 
+
+> data_all$block <- round >= 26
+Error in round >= 26 : 
+  comparison (5) is possible only for atomic and list types
+> data_all$block <- data_all$round >= 26
+> head(data_all)
+# A tibble: 6 x 18
+                               game_id                time             human_id                ai_id
+                                 <chr>              <dttm>                <chr>                <chr>
+1 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+2 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+3 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+4 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+5 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+6 052a35fe-d4d9-4ace-8315-9d172b28bb7d 2018-07-17 20:47:39 38VxtUSv_h6RR5-tAAA2 x1X8V7V7JHjNMQNeAAA3
+# ... with 14 more variables: prolific_id <chr>, condition <chr>, difficulty <dbl>, confidence <dbl>,
+#   comments <chr>, game <chr>, round <dbl>, human_action <chr>, human_rt <dbl>, ai_action <chr>,
+#   ai_rt <dbl>, winner <chr>, points_win <dbl>, block <lgl>
+> View(data_all)
+> table(data_all$game, data_all$block)
+         
+          FALSE TRUE
+  fwg      1300 1300
+  numbers  1300 1300
+  rps      1300 1300
+> data_gameblock <- filter(data_all,game,points_win,block)
+Error in filter_impl(.data, quo) : 
+  Evaluation error: operations are possible only for numeric, logical or complex types.
+> data_gameblock <- select(data_all, game,block,points_win)
+Error in select(data_all, game, block, points_win) : 
+  unused arguments (game, block, points_win)
+> data_gameblock <- select(data_all,"game","block","points_win")
+Error in select(data_all, "game", "block", "points_win") : 
+  unused arguments ("game", "block", "points_win")
+> select(data_all,game,block,points_win)
+Error in select(data_all, game, block, points_win) : 
+  unused arguments (game, block, points_win)
+> select(data_all,data_all$game,data_all$block,data_all$points_win)
+Error in select(data_all, data_all$game, data_all$block, data_all$points_win) : 
+  unused arguments (data_all$game, data_all$block, data_all$points_win)
+> data_gameblock <- c(data_all$game,data_all$block,data_all$points_win)
+> data_gameblock <- data_all[c(6,8,10,17,18)]
+> View(data_gameblock)
+> ggboxplot(data_gameblock, x = "game", y = "points_win", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+> group_by(data_all, game,block) %>% summarise(score = mean(points_win))
+# A tibble: 6 x 3
+# Groups:   game [?]
+     game block     score
+    <chr> <lgl>     <dbl>
+1     fwg FALSE 0.5876923
+2     fwg  TRUE 0.6269231
+3 numbers FALSE 0.3815385
+4 numbers  TRUE 0.4661538
+5     rps FALSE 0.4346154
+6     rps  TRUE 0.5746154
+> data_all$block <- data_all$block + 1
+> head(data_all$block)
+[1] 1 1 1 1 1 1
+> group_by(data_all, game,block) %>% summarise(score = mean(points_win))
+# A tibble: 6 x 3
+# Groups:   game [?]
+     game block     score
+    <chr> <dbl>     <dbl>
+1     fwg     1 0.5876923
+2     fwg     2 0.6269231
+3 numbers     1 0.3815385
+4 numbers     2 0.4661538
+5     rps     1 0.4346154
+6     rps     2 0.5746154
+> group_by(data_all, prolific_id,game,block) %>% summarise(score = mean(points_win))
+# A tibble: 312 x 4
+# Groups:   prolific_id, game [?]
+                prolific_id    game block score
+                      <chr>   <chr> <dbl> <dbl>
+ 1 537d1b9ffdf99b2275a4019c     fwg     1  0.84
+ 2 537d1b9ffdf99b2275a4019c     fwg     2  0.96
+ 3 537d1b9ffdf99b2275a4019c numbers     1  0.64
+ 4 537d1b9ffdf99b2275a4019c numbers     2  0.20
+ 5 537d1b9ffdf99b2275a4019c     rps     1  0.44
+ 6 537d1b9ffdf99b2275a4019c     rps     2  0.40
+ 7 56c9bd6310a82f000dffd6af     fwg     1  0.64
+ 8 56c9bd6310a82f000dffd6af     fwg     2  0.80
+ 9 56c9bd6310a82f000dffd6af numbers     1  0.24
+10 56c9bd6310a82f000dffd6af numbers     2  0.24
+# ... with 302 more rows
+> data_id_score <- group_by(data_all, prolific_id,game,block) %>% summarise(score = mean(points_win))
+> View(data_id_score)
+> ggboxplot(data_id_score, x = "game", y = "points_win", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+Error in FUN(X[[i]], ...) : object 'points_win' not found
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+> library("ggpubr")
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+> data_i_score$block <- factor(data_i_score$block, 
++                        levels = c(1, 2),
++                        labels = c( "First Half", "Second Half"))
+Error in factor(data_i_score$block, levels = c(1, 2), labels = c("First Half",  : 
+  object 'data_i_score' not found
+> data_id_score$block <- factor(data_id_score$block, 
++                        levels = c(1, 2),
++                        labels = c( "First Half", "Second Half"))
+> library("ggpubr")
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"))
+> ggline(data_id_score, x = "game", y = "score", color = "block",
++        add = c("mean_se", "dotplot"),
++        palette = c("#00AFBB", "#E7B800"))
+`stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
+> library("ggpubr")
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+> )
+Error: unexpected ')' in ")"
+> library("ggpubr")
+> ggboxplot(data_id_score, x = "game", y = "score", color = "block",
++           palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+> ggline(data_id_score, x = "game", y = "score", color = "block",
++        add = c("mean_se", "dotplot"),
++        palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games"))
+Error: unexpected ')' in:
+"       add = c("mean_se", "dotplot"),
+       palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games"))"
+> ggline(data_id_score, x = "game", y = "score", color = "block",
++        add = c("mean_se", "dotplot"),
++        palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+`stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
+> block.aov <- with(data_id_score,
++                    aov(score ~ block * game +
++                            Error(prolific_id / (block * game)))
++ )
+> block.aov <- with(data_id_score,aov(score ~ block * game + Error(prolific_id / (block * game))))
+> summary(block.aov)
+
+Error: prolific_id
+          Df Sum Sq Mean Sq F value Pr(>F)
+Residuals 51  9.291  0.1822               
+
+Error: prolific_id:block
+          Df Sum Sq Mean Sq F value   Pr(>F)    
+block      1 0.6033  0.6033   25.89 5.26e-06 ***
+Residuals 51 1.1884  0.0233                     
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Error: prolific_id:game
+           Df Sum Sq Mean Sq F value Pr(>F)    
+game        2  1.759  0.8793   14.45  3e-06 ***
+Residuals 102  6.209  0.0609                   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Error: prolific_id:block:game
+            Df Sum Sq Mean Sq F value Pr(>F)  
+block:game   2 0.1324 0.06622   3.182 0.0457 *
+Residuals  102 2.1230 0.02081                 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> data_lvl <- group_by(data_all, prolific_id,game,block,condition,confidence) %>% summarise(score = mean(points_win))
+> View(data_lvl)
+> ggboxplot(data_lvl, x = "game", y = "score", color = "condition",
++           +           palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+Error: unexpected '=' in:
+"ggboxplot(data_lvl, x = "game", y = "score", color = "condition",
+          +           palette ="
+> library("ggpubr")
+> ggboxplot(data_lvl, x = "game", y = "score", color = "condition",
++           palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+> cond.aov <- with(data_lvl,aov(score ~ condition * game + Error(prolific_id / (condition * game))))
+Warning message:
+In aov(score ~ condition * game + Error(prolific_id/(condition *  :
+  Error() model is singular
+> summary(cond.aov)
+
+Error: prolific_id
+          Df Sum Sq Mean Sq F value Pr(>F)  
+condition  1  0.529  0.5288   3.017 0.0885 .
+Residuals 50  8.763  0.1753                 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Error: prolific_id:game
+                Df Sum Sq Mean Sq F value   Pr(>F)    
+game             2  1.759  0.8793  14.275 3.52e-06 ***
+condition:game   2  0.049  0.0247   0.401    0.671    
+Residuals      100  6.160  0.0616                     
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Error: Within
+           Df Sum Sq Mean Sq F value Pr(>F)
+Residuals 156  4.047 0.02594               
+> table(data_all$game, data_all$condition)
+         
+          Level1 Level2
+  fwg       1200   1400
+  numbers   1200   1400
+  rps       1200   1400
+> install.packages(“lme4”)
+Error: unexpected input in "install.packages(�"
+> install.packages('lme4')
+
+  There is a binary version available but the source version is later:
+     binary source needs_compilation
+lme4 1.1-15 1.1-17              TRUE
+
+Do you want to install from sources the package which needs compilation?
+y/n: n
+trying URL 'https://cran.rstudio.com/bin/macosx/mavericks/contrib/3.3/lme4_1.1-15.tgz'
+Content type 'application/x-gzip' length 6877286 bytes (6.6 MB)
+==================================================
+downloaded 6.6 MB
+
+
+The downloaded binary packages are in
+	/var/folders/pg/l6hgc3xd36z8v0htsg18n81h0000gn/T//Rtmpuc4iXU/downloaded_packages
+> library(lme4)
+Loading required package: Matrix
+Warning message:
+package ‘lme4’ was built under R version 3.3.2 
+> cond.model = lmer(score ~ condition + game + (1|prolific_id),data=data_lvl)
+> summary(cond.model)
+Linear mixed model fit by REML ['lmerMod']
+Formula: score ~ condition + game + (1 | prolific_id)
+   Data: data_lvl
+
+REML criterion at convergence: -26.8
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.51456 -0.67974 -0.06329  0.66068  2.45502 
+
+Random effects:
+ Groups      Name        Variance Std.Dev.
+ prolific_id (Intercept) 0.02258  0.1503  
+ Residual                0.03975  0.1994  
+Number of obs: 312, groups:  prolific_id, 52
+
+Fixed effects:
+                Estimate Std. Error t value
+(Intercept)      0.65177    0.03836  16.989
+conditionLevel2 -0.08258    0.04754  -1.737
+gamenumbers     -0.18346    0.02765  -6.635
+gamerps         -0.10269    0.02765  -3.714
+
+Correlation of Fixed Effects:
+            (Intr) cndtL2 gmnmbr
+conditnLvl2 -0.667              
+gamenumbers -0.360  0.000       
+gamerps     -0.360  0.000  0.500
+> cond.null = lmer(score ~ game + (1|prolific_id),data=data_lvl)
+> anova(cond.null,cond.model)
+refitting model(s) with ML (instead of REML)
+Data: data_lvl
+Models:
+cond.null: score ~ game + (1 | prolific_id)
+cond.model: score ~ condition + game + (1 | prolific_id)
+           Df     AIC     BIC logLik deviance  Chisq Chi Df Pr(>Chisq)  
+cond.null   5 -34.665 -15.950 22.332  -44.665                           
+cond.model  6 -35.711 -13.253 23.856  -47.711 3.0468      1     0.0809 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> cond.model2 = lmer(score ~ condition + game + (1+condition|prolific_id),data=data_lvl)
+Warning message:
+In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?
+> y
+Error: object 'y' not found
+> cond.model2 = lmer(score ~ condition + game + (1+condition|prolific_id),data=data_lvl,REML=FALSE)
+Warning message:
+In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?
+> cond.null2 = lmer(score ~ game + (1+condition|prolific_id),data=data_lvl)
+Warning message:
+In checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv,  :
+  Model is nearly unidentifiable: large eigenvalue ratio
+ - Rescale variables?
+> anova(cond.null2,cond.model2)
+refitting model(s) with ML (instead of REML)
+Data: data_lvl
+Models:
+cond.null2: score ~ game + (1 + condition | prolific_id)
+cond.model2: score ~ condition + game + (1 + condition | prolific_id)
+            Df     AIC     BIC logLik deviance  Chisq Chi Df Pr(>Chisq)  
+cond.null2   7 -30.665 -4.4635 22.332  -44.665                           
+cond.model2  8 -31.713 -1.7692 23.857  -47.713 3.0488      1     0.0808 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+> data_conf <- group_by(data_all, prolific_id,condition,confidence) %>% summarise(score = mean(points_win))
+> View(data_conf)
+> mod <- lm(score ~ condition + confidence)
+Error in eval(expr, envir, enclos) : object 'score' not found
+> mod <- lm(score ~ condition + confidence,dara=data_conf)
+Error in eval(expr, envir, enclos) : object 'score' not found
+> mod <- lm(score ~ condition + confidence,data=data_conf)
+> summary(mod)
+
+Call:
+lm(formula = score ~ condition + confidence, data = data_conf)
+
+Residuals:
+      Min        1Q    Median        3Q       Max 
+-0.294163 -0.071437 -0.004708  0.084117  0.300811 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      0.377549   0.040562   9.308 2.06e-12 ***
+conditionLevel2 -0.106079   0.036939  -2.872  0.00601 ** 
+confidence       0.003374   0.000572   5.899 3.35e-07 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.132 on 49 degrees of freedom
+Multiple R-squared:  0.4485,	Adjusted R-squared:  0.426 
+F-statistic: 19.93 on 2 and 49 DF,  p-value: 4.647e-07
+
+> lmvga
+Error: object 'lmvga' not found
+> gvlma
+Error: object 'gvlma' not found
+> mod2 <- lm(score ~ condition*confidence,data=data_conf)
+> summary(mod2)
+
+Call:
+lm(formula = score ~ condition * confidence, data = data_conf)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.29383 -0.07609  0.01084  0.08821  0.29601 
+
+Coefficients:
+                             Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                 0.3971288  0.0513374   7.736 5.54e-10 ***
+conditionLevel2            -0.1469190  0.0748348  -1.963  0.05543 .  
+confidence                  0.0030049  0.0008225   3.653  0.00064 ***
+conditionLevel2:confidence  0.0007240  0.0011514   0.629  0.53248    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1328 on 48 degrees of freedom
+Multiple R-squared:  0.453,	Adjusted R-squared:  0.4189 
+F-statistic: 13.25 on 3 and 48 DF,  p-value: 1.988e-06
+
+> group_by(data_all, prolific_id,condition,confidence) %>% summarise(score = mean(points_win)
++ 
++ 
++ 
+
+> group_by(data_all,condition) %>% summarise(score = mean(points_win))
+# A tibble: 2 x 2
+  condition     score
+      <chr>     <dbl>
+1    Level1 0.5563889
+2    Level2 0.4738095
+> group_by(data_all,condition,game) %>% summarise(score = mean(points_win))
+# A tibble: 6 x 3
+# Groups:   condition [?]
+  condition    game     score
+      <chr>   <chr>     <dbl>
+1    Level1     fwg 0.6708333
+2    Level1 numbers 0.4566667
+3    Level1     rps 0.5416667
+4    Level2     fwg 0.5528571
+5    Level2 numbers 0.3957143
+6    Level2     rps 0.4728571
+> group_by(data_all,game,condition) %>% summarise(score = mean(points_win))
+# A tibble: 6 x 3
+# Groups:   game [?]
+     game condition     score
+    <chr>     <chr>     <dbl>
+1     fwg    Level1 0.6708333
+2     fwg    Level2 0.5528571
+3 numbers    Level1 0.4566667
+4 numbers    Level2 0.3957143
+5     rps    Level1 0.5416667
+6     rps    Level2 0.4728571
+> View(data_id_score)
+> View(data_lvl)
+> ggline(data_lvl, x = "game", y = "score", color = "condition",
++          +        add = c("mean_se", "dotplot"),
+Error: unexpected '=' in:
+"ggline(data_lvl, x = "game", y = "score", color = "condition",
+         +        add ="
+>          +        palette = c("#00AFBB", "#E7B800"),order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+Error: unexpected ',' in "         +        palette = c("#00AFBB", "#E7B800"),"
+> ggline(data_lvl, x = "game", y = "score", color = "condition",add = c("mean_se", "dotplot"),palette = c("#00AFBB", "#E7B800"), order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+`stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
+> ggline(data_lvl, x = "game", y = "score", color = "condition",add = c("mean_se", "dotplot"),palette = c("#73D8DE", "#CD5C5C"), order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+`stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
+> ggline(data_lvl, x = "game", y = "score", color = "condition",add = c("mean_se", "dotplot"),palette = c("#3FB5BC", "#CD5C5C"), order = c("rps", "fwg","numbers"),ylab = "Percentage of Wins", xlab = "Games")
+`stat_bindot()` using `bins = 30`. Pick better value with `binwidth`.
+> save.image("~/Google Drive/CODES /Capstone /Analysis_R.RData")
+> plot(cars)

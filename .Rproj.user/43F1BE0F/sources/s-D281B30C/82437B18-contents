@@ -1,0 +1,7 @@
+my_comparisons <- list( c("RPS", "FWG"), c("FWG", "NUMBERS"), c("RPS", "NUMBERS") )
+ggline(dat3, x = "game.f", y = "game_score", add = c("mean_se", "jitter"), color="game.f", palette = c("#00AFBB", "#E7B800", "#FC4E07"), order = c("RPS", "FWG","NUMBERS"), ylab = "Score", xlab = "Games") + stat_compare_means(comparisons = my_comparisons, method = "t.test", label.y = c(1.1, 1.2, 1.30)) +
+stat_compare_means(label.y = 1.40) 
+
+
+
+The fact that it was harder to face level 2 players in each game is in itself interesting. If players are using spatial heuristics or some other habitual learning, why should this be the case?

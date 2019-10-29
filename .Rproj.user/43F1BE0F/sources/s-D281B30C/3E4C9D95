@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1534172012357.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3E4C9D95",
+    "lastKnownWriteTime" : 4684166144,
+    "last_content_update" : 1534172012357,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "5BBE60B9",
+        "caption" : "dat_merge2",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=dat_merge2&cache_key=5BBE60B9",
+        "displayedObservations" : 45,
+        "environment" : "",
+        "object" : "dat_merge2",
+        "preview" : 0,
+        "totalObservations" : 45,
+        "variables" : 6
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572348350410.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "366|13|404|0|\n",
+    "hash" : "4051488994",
+    "id" : "FCF35271",
+    "lastKnownWriteTime" : 1572373851,
+    "last_content_update" : 1572373851794,
+    "path" : "~/Google Drive/PHD/PHD_1/CODES_Capstone /modelling.R/comp_model_1019.Rmd",
+    "project_path" : "comp_model_1019.Rmd",
+    "properties" : {
+        "cursorPosition" : "334,0",
+        "docOutlineVisible" : "0",
+        "last_setup_crc32" : "B222004e900b64d",
+        "scrollLine" : "319"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

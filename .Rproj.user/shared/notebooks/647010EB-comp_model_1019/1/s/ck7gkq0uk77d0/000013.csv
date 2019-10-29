@@ -1,0 +1,3 @@
+"0",""
+"0","write.csv(Nbayes_par_results,file=""Nbayes_par_results.csv"",row.names = FALSE)"
+"0","#kable(Nbayes_par_results)"

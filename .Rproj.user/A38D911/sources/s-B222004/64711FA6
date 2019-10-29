@@ -1,0 +1,34 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572373647377.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "64711FA6",
+    "lastKnownWriteTime" : 140726949333856,
+    "last_content_update" : 1572373647377,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "5BBFA9CE",
+        "caption" : "Nbayes_par_results",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=Nbayes_par_results&cache_key=5BBFA9CE",
+        "displayedObservations" : "52",
+        "environment" : "",
+        "expression" : "Nbayes_par_results",
+        "object" : "Nbayes_par_results",
+        "preview" : "0",
+        "source_window_id" : "",
+        "totalObservations" : "52",
+        "variables" : "4"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

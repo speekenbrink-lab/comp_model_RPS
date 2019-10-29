@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1533834339117.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "7F910F1C",
+    "lastKnownWriteTime" : 1534165969,
+    "last_content_update" : 1534184241317,
+    "path" : "~/Google Drive/CODES /Capstone /modelling.R/clean_analysis.Rmd",
+    "project_path" : "clean_analysis.Rmd",
+    "properties" : {
+        "chunk_output_type" : "inline",
+        "cursorPosition" : "620,0",
+        "docOutlineVisible" : "0",
+        "last_setup_crc32" : "D281B30Ce900b64d",
+        "scrollLine" : "617",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
