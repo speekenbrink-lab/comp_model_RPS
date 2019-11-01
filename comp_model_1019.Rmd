@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 dat <- read.csv("data20180719.csv")
-#dat <- read.csv("test_data.csv")
+# dat <- read.csv("test_data.csv")
 ```
 
 ## Preprosessing and transforming data
@@ -28,13 +28,13 @@ dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
 # create a new variable 'block' with round 1...25 = block 1 and round 26...50 as block 2
 dat$block <- as.numeric(cut(dat$round,2))
 # create a new data.frame in a 'wide format'
-widedata <- dat %>% 
-  unite(game_block,game,block) %>% # this creates a new variable which combines game and block
-    group_by(human_id,condition,game_block) %>% # let the functions know you want to separate things by ID, condition, and game_block
-      summarize(mean_score = mean(score)) %>% # compute average score (i.e wins - losses)
-        spread(game_block,mean_score) # reformat in the 'wide' format
-# save the data file as a .csv to use in e.g. SPSS
-write.csv(widedata,row.names=FALSE,file="scores_wide.csv")
+# widedata <- dat %>%
+#   unite(game_block,game,block) %>% # this creates a new variable which combines game and block
+#     group_by(human_id,condition,game_block) %>% # let the functions know you want to separate things by ID, condition, and game_block
+#       summarize(mean_score = mean(score)) %>% # compute average score (i.e wins - losses)
+#         spread(game_block,mean_score) # reformat in the 'wide' format
+# # save the data file as a .csv to use in e.g. SPSS
+# write.csv(widedata,row.names=FALSE,file="scores_wide.csv")
 
 ```
 
@@ -332,73 +332,110 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value=c("-2loglik","lik
 ```
 
 ```{r}
-
-naive_bayes_modelling <- list()
-for(id in unique(dat$human_id)) {
-  naive_bayes_modelling[[id]] <- list()
-  tdat <- subset(dat,human_id == id)
-  naive_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),"-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
-}
-
-save(naive_bayes_modelling,file="naive_bayes_modelling.RData")
-
-```
-```{r}
-Nbayes_par_results <- data.frame()
-for(id in unique(dat$human_id)) {
-Nbayes_par_results <- rbind(Nbayes_par_results,
-                       data.frame(
-                         "id" = id,
-                         "condition" = dat[dat$human_id==id,"condition"][1],
-                         # Theta is the parameter governing AI stochasticity. Truth is 0.9
-                         "theta" = naive_bayes_modelling[[id]]$par[1],
-                         # Epsilone is parameter showing cases where human deviates from predictions about opponent (lower better)
-                         "eps" = naive_bayes_modelling[[id]]$par[2]))
-}
-
-# Plotting the theta/eps scatter for all participants...
-plot(Nbayes_par_results$theta,Nbayes_par_results$eps,xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
-
-write.csv(Nbayes_par_results,file="Nbayes_par_results.csv",row.names = FALSE)
+# 
+# naive_bayes_modelling <- list()
+# for(id in unique(dat$human_id)) {
+#   naive_bayes_modelling[[id]] <- list()
+#   tdat <- subset(dat,human_id == id)
+#   naive_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),"-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+# }
+# 
+# save(naive_bayes_modelling,file="naive_bayes_modelling.RData")
+# 
+# ```
+# ```{r}
+# Nbayes_par_results <- data.frame()
+# for(id in unique(dat$human_id)) {
+# Nbayes_par_results <- rbind(Nbayes_par_results,
+#                        data.frame(
+#                          "id" = id,
+#                          "condition" = dat[dat$human_id==id,"condition"][1],
+#                          # Theta is the parameter governing AI stochasticity. Truth is 0.9
+#                          "theta" = naive_bayes_modelling[[id]]$par[1],
+#                          # Epsilone is parameter showing cases where human deviates from predictions about opponent (lower better)
+#                          "eps" = naive_bayes_modelling[[id]]$par[2]))
+# }
+# 
+# # Plotting the theta/eps scatter for all participants...
+# plot(Nbayes_par_results$theta,Nbayes_par_results$eps,xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
+# 
+# write.csv(Nbayes_par_results,file="Nbayes_par_results.csv",row.names = FALSE)
 #kable(Nbayes_par_results)
 ```
 
 
 ## Q-learning
 ```{r}
-# 
-# Q_learn <- function(beta,lambda,data){
-#   # actions 
-#   # beta= inverse temperature parameter in softmax choicd=e function
-#   # lambda = learning rate (one per game?)
-#   # data : participant and ai choice data. 
-#   # Returns Q-values per trial and predicts choice using softmax
-#   Q_vals_RPS = rep(0.0,3)
-#   names(Q_vals_RPS) <- c("R","P","S")
-#   Q_vals_FWG = rep(0.0,3)
-#   names(Q_vals_FWG) <- c("F","W","G")
-#   Q_vals_NUM = rep(0.0,5)
-#   names(Q_vals_NUM) <- c("1","2","3","4","5")
-#   
-#   for(t in 1:nrow(data)) {
-#     t_game <- data[t,"game"]
-#     Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, numbers = Q_vals_NUM)
-#     if(t_game == "numbers") nopts <- 5 else nopts <- 3
-#     if(data[t,"round"] == 1) {
-#       # first round is uniform prediction
-#       Q_vals <- rep(0.0, nopts)
-#       #lik[,t] <- prior_vec
-#     } else {
-#       
-#     }
-#     
-#     
-#   }
-#   
-# } 
 
+Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
+  # actions
+  # beta= inverse temperature parameter in softmax choice function
+  # lambda = learning rate (one per game?)
+  # data : participant and ai choice data.
+  # Returns Q-values per trial and predicts choice using softmax
+  beta <- par[1]
+  lambda <- par[2]
+  Q_vals_RPS = matrix(0.0,3)
+  names(Q_vals_RPS) <- c("R","P","S")
+  Q_vals_FWG = matrix(0.0,3)
+  names(Q_vals_FWG) <- c("F","W","G")
+  Q_vals_NUM = matrix(0.0,5)
+  names(Q_vals_NUM) <- c("1","2","3","4","5")
+  
+  lik_hum <- matrix(0.0,nrow(data))
+
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    if(t_game == "numbers") nopts <- 5 else nopts <- 3
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, numbers = Q_vals_NUM)
+      lik_hum[t] <- 1/nopts
+    } else {
+      # Get reward and past human action
+      reward <- as.numeric(data[t-1,"score"])
+      h_act_prev <- as.character(data[t-1,"h_action"])
+      Q_vals[h_act_prev] <- Q_vals[[h_act_prev]] + as.numeric(lambda)*( reward - Q_vals[[h_act_prev]])
+      
+      # cat(Q_vals,"\n") 
+
+      # Assume human chooses action probabilistically using softmax on Q values
+      probs <- exp(Q_vals/beta)/sum(exp(Q_vals/beta))
+      
+      # Get actual human action and compute likelihood
+      h_act <- as.character(data[t,"h_action"])
+      act_index <- match(h_act, names(Q_vals))
+      lik_hum[t] <- probs[[act_index]]
+    }
+  }
+  if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+  
+}
 
 
 ```
 
 
+```{r}
+QL_modelling <- list()
+for(id in unique(dat$human_id)) {
+  QL_modelling[[id]] <- list()
+  tdat <- subset(dat,human_id == id)
+  QL_modelling[[id]] <- optim(c(0.1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0.001,0.01), upper = c(0.99,10), method="L-BFGS-B")
+}
+
+save(QL_modelling,file="QL_modelling.RData")
+
+
+```
+
+
+## Q-learning with state space including last actions
