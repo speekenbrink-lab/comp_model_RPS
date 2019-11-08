@@ -438,4 +438,60 @@ save(QL_modelling,file="QL_modelling.RData")
 ```
 
 
-## Q-learning with state space including last actions
+## Parametric EWA 
+
+```{r}
+
+indicator <- function(strat,action)
+  if (strat == action) { 
+    return (1)
+  else 
+
+
+EWA_par <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
+  # actions
+  # beta= inverse temperature parameter in softmax choice function
+  # lambda = learning rate (one per game?)
+  # data : participant and ai choice data.
+  # Returns Q-values per trial and predicts choice using softmax
+  phi <- par[1]
+  delta <- par[2]
+  kappa <- par[3]
+  lambda <- par[4]
+  
+  N <- 1
+  
+  A_RPS = matrix(0.0,3)
+  names(A_RPS) <- c("R","P","S")
+  A_FWG = matrix(0.0,3)
+  names(A_FWG) <- c("F","W","G")
+  A_NUM = matrix(0.0,5)
+  names(A_NUM) <- c("1","2","3","4","5")
+  
+  lik_hum <- matrix(0.0,nrow(data))
+
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    if(t_game == "numbers") nopts <- 5 else nopts <- 3
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      Att <- switch(as.character(t_game),rps=A_RPS,fwg = A_FWG, numbers = A_NUM)
+      lik_hum[t] <- 1/nopts
+    } else {
+      # Get reward and past human action
+      reward <- as.numeric(data[t-1,"score"])
+      h_act_prev <- as.character(data[t-1,"h_action"])
+      
+      Att[h_act_prev] <- (phi*N*Att[[h_act_prev]]  + reward
+      
+      # cat(Q_vals,"\n") 
+
+      # Assume human chooses action probabilistically using softmax on Q values
+      probs <- exp(Q_vals/beta)/sum(exp(Q_vals/beta))
+      
+      # Get actual human action and compute likelihood
+      h_act <- as.character(data[t,"h_action"])
+      act_index <- match(h_act, names(Q_vals))
+      lik_hum[t] <- probs[[act_index]]
+    }
+  }
