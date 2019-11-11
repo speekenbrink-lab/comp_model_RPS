@@ -23,6 +23,7 @@ dat <- read.csv("data20180719.csv")
 # using some functions from the 'tidyverse' (also for me to get use to them ;-)
 library(tidyr)
 library(dplyr)
+library(DEoptim)
 # transform 'winner' variable in numeric score
 dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
 # create a new variable 'block' with round 1...25 = block 1 and round 26...50 as block 2
@@ -435,7 +436,11 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
 # save(QL_modelling,file="QL_modelling.RData")
 # 
 # 
-# ```
+
+```
+
+
+```{r}
 # 
 # 
 # ## Parametric EWA 
@@ -530,7 +535,7 @@ dimnames(reward_NUM) = list(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5
 
 EWA_self <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
 
-  lambda <- par[[1]]
+  lambda <- par[1]
   # Initiate N(0) = 1 as in Camerer and Ho 1997 paper. 
   N <- 1.0
   
@@ -634,7 +639,9 @@ EWA_self_modelling <- list()
 for(id in unique(dat$human_id)) {
   EWA_self_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
-  EWA_self_modelling[[id]] <- optim(10.0,fn=EWA_self,gr = NULL, data=tdat,"-2loglik", lower = 0.001, upper = 200, method="L-BFGS-B")
+#   EWA_self_modelling[[id]] <- optim(10.0,fn=EWA_self,gr = NULL, data=tdat,"-2loglik", lower = 0.0, upper = 200, method="L-BFGS-B")
+# }
+  EWA_self_modelling[[id]] <- DEoptim(EWA_self, 0.0, 10.0, data=tdat,"-2loglik")
 }
 
 save(EWA_self_modelling,file="EWA_self_modelling.RData")
