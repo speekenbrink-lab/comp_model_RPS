@@ -425,42 +425,116 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
 
 
 ```{r}
-QL_modelling <- list()
-for(id in unique(dat$human_id)) {
-  QL_modelling[[id]] <- list()
-  tdat <- subset(dat,human_id == id)
-  QL_modelling[[id]] <- optim(c(0.1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0.001,0.01), upper = c(0.99,10), method="L-BFGS-B")
-}
+# QL_modelling <- list()
+# for(id in unique(dat$human_id)) {
+#   QL_modelling[[id]] <- list()
+#   tdat <- subset(dat,human_id == id)
+#   QL_modelling[[id]] <- optim(c(0.1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0.001,0.01), upper = c(0.99,10), method="L-BFGS-B")
+# }
+# 
+# save(QL_modelling,file="QL_modelling.RData")
+# 
+# 
+# ```
+# 
+# 
+# ## Parametric EWA 
+# 
+# ```{r}
+# 
+# # Define reward matrices from the prospective of the row player (human in our case)
+reward_RPS <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+dimnames(reward_RPS) = list(c("R", "P", "S"), c("R", "P", "S"))
 
-save(QL_modelling,file="QL_modelling.RData")
+reward_FWG <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+dimnames(reward_FWG) = list(c("F", "W", "G"), c("F", "W", "G"))
 
+reward_NUM <- t(matrix(c(0,-1,0,0,1,1,0,-1,0,0,0,1,0,-1,0,0,0,1,0,-1,-1,0,0,1,0),nrow=5, ncol=5))
+dimnames(reward_NUM) = list(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
 
+# 
+# 
+# EWA_par <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
+#   # par: vector of parameters to the EWA model 
+#   # Data :choice data by trial for each participant 
+#   # Returns sum of loglikelihoods or likelihood per trial 
+#   phi <- par[1]
+#   delta <- par[2]
+#   rho <- par[3]
+#   lambda <- par[4]
+#   
+#   # Initiate N(0) = 1 as in Camerer and Ho 1997 paper. 
+#   N <- 1
+#   
+#   # Define attraction vectors for each game 
+#   A_RPS = matrix(0.0,3)
+#   names(A_RPS) <- c("R","P","S")
+#   A_FWG = matrix(0.0,3)
+#   names(A_FWG) <- c("F","W","G")
+#   A_NUM = matrix(0.0,5)
+#   names(A_NUM) <- c("1","2","3","4","5")
+#   
+#   # Initiate likelihood by trial vector 
+#   lik_hum <- matrix(0.0,nrow(data))
+# 
+#   for(t in 1:nrow(data)) {
+#     t_game <- data[t,"game"]
+#     if(t_game == "numbers") nopts <- 5 else nopts <- 3
+#     if(data[t,"round"] == 1) {
+#       # first round is uniform prediction
+#       Att <- switch(as.character(t_game),rps=A_RPS,fwg = A_FWG, numbers = A_NUM)
+#       reward <- switch(as.character(t_game),rps=reward_RPS,fwg = reward_FWG, numbers = reward_NUM)
+#       lik_hum[t] <- 1/nopts
+#     } else {
+#       # Get reward and past human action
+#       h_act_prev <- as.character(data[t-1,"h_action"])
+#       a_act_prev <- as.character(data[t-1,"a_action"])
+#       for (i in length(Att)) {
+#         action <- as.character(names(Att)[i])
+#         # cat("this is current strat",action,"\n")
+#         # cat("this is previous humna action",h_act_prev,"\n")
+#         
+#         # Attraction vector update rule 
+#         Att[[i]] <- (phi*N*Att[[i]]  + ( delta + (1- delta)*(action == h_act_prev))*as.numeric(reward[action,a_act_prev])) / (rho*N + 1)
+#       }
+#       #Update the value of N 
+#       N <- rho*N + 1 
+#       
+#       # Assume human chooses action probabilistically using softmax on Attraction values
+#       probs <- exp(lambda*Att)/sum(exp(lambda*Att))
+#       
+#       # Get actual human action and compute likelihood
+#       h_act <- as.character(data[t,"h_action"])
+#       act_index <- match(h_act, names(Att))
+#       lik_hum[t] <- probs[[act_index]]
+#     }
+#   }
+#   
+#  if(return_value == "-2loglik") {
+#     ret <- -2*sum(log(lik_hum))
+#     if(is.infinite(ret)) {
+#       return(1e+300)
+#     } else {
+#       return(ret)
+#     }
+#   }
+#   if(return_value == "likelihood_by_trial") return(lik_hum)
+# }
 ```
 
 
-## Parametric EWA 
-
 ```{r}
+#######################################################################################
 
-indicator <- function(strat,action)
-  if (strat == action) { 
-    return (1)
-  else 
+##  Self-Tuning EWA: 
 
+EWA_self <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
 
-EWA_par <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
-  # actions
-  # beta= inverse temperature parameter in softmax choice function
-  # lambda = learning rate (one per game?)
-  # data : participant and ai choice data.
-  # Returns Q-values per trial and predicts choice using softmax
-  phi <- par[1]
-  delta <- par[2]
-  kappa <- par[3]
-  lambda <- par[4]
+  lambda <- par[[1]]
+  # Initiate N(0) = 1 as in Camerer and Ho 1997 paper. 
+  N <- 1.0
   
-  N <- 1
-  
+  # Define attraction vectors for each game 
   A_RPS = matrix(0.0,3)
   names(A_RPS) <- c("R","P","S")
   A_FWG = matrix(0.0,3)
@@ -468,6 +542,7 @@ EWA_par <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
   A_NUM = matrix(0.0,5)
   names(A_NUM) <- c("1","2","3","4","5")
   
+  # Initiate likelihood by trial vector 
   lik_hum <- matrix(0.0,nrow(data))
 
   for(t in 1:nrow(data)) {
@@ -476,22 +551,94 @@ EWA_par <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
     if(data[t,"round"] == 1) {
       # first round is uniform prediction
       Att <- switch(as.character(t_game),rps=A_RPS,fwg = A_FWG, numbers = A_NUM)
+      reward <- switch(as.character(t_game),rps=reward_RPS,fwg = reward_FWG, numbers = reward_NUM)
+      game_data <- subset(data, game == t_game)
       lik_hum[t] <- 1/nopts
-    } else {
-      # Get reward and past human action
-      reward <- as.numeric(data[t-1,"score"])
-      h_act_prev <- as.character(data[t-1,"h_action"])
-      
-      Att[h_act_prev] <- (phi*N*Att[[h_act_prev]]  + reward
-      
-      # cat(Q_vals,"\n") 
 
-      # Assume human chooses action probabilistically using softmax on Q values
-      probs <- exp(Q_vals/beta)/sum(exp(Q_vals/beta))
+      R_t <- rep(0.0,nopts)
+      H_t <- R_t
+      
+    } else {
+      
+      indx <- data[t,"round"]
+      # Get reward and past human action
+      h_act_prev <- as.character(game_data[indx-1,"h_action"])
+      a_act_prev <- as.character(game_data[indx-1,"a_action"])
+
+      # Estimate phi(t)
+      R_t <- as.numeric(names(Att) == a_act_prev)
+      # cat("This is R(t)",R_t,"\n")
+      
+      H_t <- (H_t*(indx-2) + R_t)/(indx-1)
+      # cat("this is H(t)",H_t,"\n")
+      
+      Phi_t <- 1 - 0.5*sum((H_t-R_t)^2)
+      # cat("This is Phit(t)",Phi_t,"\t")
+      
+      # Estimate vector Delta(t)
+      delta_t <- as.numeric(reward[,a_act_prev] >= as.numeric(game_data[indx-1,"score"]))
+      # cat("this is delta(t)",delta_t,"\n")
+      
+      for (i in length(Att)) {
+        action <- as.character(names(Att)[i])
+        # cat("this is current strat",action,"\n")
+        # cat("this is previous humna action",h_act_prev,"\n")
+        
+        # Attraction vector update rule 
+        Att[[i]] <- (Phi_t*N*Att[[i]]  + ( delta_t[[i]] + (1- delta_t[[i]])*(action == h_act_prev))*as.numeric(reward[action,a_act_prev])) / (Phi_t*N + 1)
+      }
+      #Update the value of N 
+      N <- Phi_t*N + 1 
+      
+      # Assume human chooses action probabilistically using softmax on Attraction values
+      probs <- exp(lambda*Att)/sum(exp(lambda*Att))
       
       # Get actual human action and compute likelihood
-      h_act <- as.character(data[t,"h_action"])
-      act_index <- match(h_act, names(Q_vals))
+      h_act <- as.character(game_data[indx,"h_action"])
+      act_index <- match(h_act, names(Att))
       lik_hum[t] <- probs[[act_index]]
     }
   }
+  
+ if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+}
+
+
+
+  
+```
+  
+  
+```{r}
+# 
+# EWA_modelling <- list()
+# for(id in unique(dat$human_id)) {
+# 
+#   EWA_modelling[[id]] <- list()
+#   tdat <- subset(dat,human_id == id)
+#   EWA_modelling[[id]] <- optim(c(0.5,0.5,0.5,0.5),fn=EWA_par,gr = NULL, data=tdat,"-2loglik", lower = c(0.001,0.001,0.001,0.001), upper = c(1,0.99,0.99,1), method="L-BFGS-B")
+# }
+# 
+# save(EWA_modelling,file="EWA_modelling.RData")
+
+
+EWA_self_modelling <- list()
+for(id in unique(dat$human_id)) {
+  EWA_self_modelling[[id]] <- list()
+  tdat <- subset(dat,human_id == id)
+  EWA_self_modelling[[id]] <- optim(10.0,fn=EWA_self,gr = NULL, data=tdat,"-2loglik", lower = 0.001, upper = 200, method="L-BFGS-B")
+}
+
+save(EWA_self_modelling,file="EWA_self_modelling.RData")
+
+
+```
+  
