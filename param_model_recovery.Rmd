@@ -1,0 +1,209 @@
+---
+title: "Simulation_EWA"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# Build function that will simulate a self tuning EWA player given parameter Lambda, and generate actions for 50 rounds
+# of each game. 
+# NOTE : haven't introduced noise in either human or computer actions. 
+
+gen_data <- function(par,num_rounds){
+
+  lambda <- par[1]
+  games <- c("rps","fwg","numbers")
+  condition <- sample(c("level1","level2"),1)
+  data <- data.frame()
+
+  # Define attraction vectors for each game 
+  A_RPS = matrix(0.0,3)
+  names(A_RPS) <- c("R","P","S")
+  A_FWG = matrix(0.0,3)
+  names(A_FWG) <- c("F","W","G")
+  A_NUM = matrix(0.0,5)
+  names(A_NUM) <- c("1","2","3","4","5")
+  
+  # # Define reward matrices from the prospective of the row player (human in our case)
+  reward_RPS <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_RPS) = list(c("R", "P", "S"), c("R", "P", "S"))
+  
+  reward_FWG <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_FWG) = list(c("F", "W", "G"), c("F", "W", "G"))
+  
+  reward_NUM <- t(matrix(c(0,-1,0,0,1,1,0,-1,0,0,0,1,0,-1,0,0,0,1,0,-1,-1,0,0,1,0),nrow=5, ncol=5))
+  dimnames(reward_NUM) = list(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
+  
+  for (t_game in games){
+      # Initiate dataframe
+      game_data <- setNames(data.frame(matrix(ncol = 6, nrow = num_rounds)), c("condition","game", "round", "h_action","a_action","score"))
+      # Initialize attraction vector, rewards + randomly select first actions
+      Att <- switch(as.character(t_game),rps=A_RPS,fwg = A_FWG, numbers = A_NUM)
+      game_actions <- names(Att)
+      reward <- switch(as.character(t_game), rps=reward_RPS, fwg=reward_FWG, numbers=reward_NUM)
+      pred_file_opp <- switch(as.character(t_game),rps = rps_predict_opp,fwg = fwg_predict_opp, numbers = numbers_predict_opp)
+    
+    for(t in 1:num_rounds) {
+      if(t_game == "numbers") nopts <- 5 else nopts <- 3
+      game_data[t,"game"]<- t_game
+      game_data[t,"round"] <- t
+      game_data[t,"condition"] <- condition
+      
+      if(t == 1) {
+
+        game_data[t,"h_action"] <- as.character(sample(game_actions, 1 ))
+        game_data[t,"a_action"] <- as.character(sample(game_actions, 1 ))
+        game_data[t,"score"] <- reward[game_data[t,"h_action"], game_data[t,"a_action"]]
+        lik_hum <- c(1/nopts)
+        N <- 1.0
+        R_t <- rep(0.0,nopts)
+        H_t <- R_t
+      
+      } else {
+        
+        # Get reward and past human action
+        h_act_prev <- as.character(game_data[t-1,"h_action"])
+        a_act_prev <- as.character(game_data[t-1,"a_action"])
+  
+        # Estimate phi(t)
+        R_t <- as.numeric(game_actions == a_act_prev)
+        # cat("This is R(t)",R_t,"\n")
+        
+        H_t <- (H_t*(t-2) + R_t)/(t-1)
+        # cat("this is H(t)",H_t,"\n")
+        
+        Phi_t <- 1 - 0.5*sum((H_t-R_t)^2)
+        # cat("This is Phit(t)",Phi_t,"\t")
+        
+        # Estimate vector Delta(t)
+        delta_t <- as.numeric(reward[,a_act_prev] >= as.numeric(game_data[t-1,"score"]))
+        #cat("this is delta(t)",delta_t,"\n")
+        
+        for (i in 1:length(Att)) {
+          action <- as.character(game_actions[i])
+          # Attraction vector update rule 
+          Att[[i]] <- (Phi_t*N*Att[[i]]  + ( delta_t[[i]] + (1- delta_t[[i]])*(action == h_act_prev))*as.numeric(reward[action,a_act_prev])) / (Phi_t*N + 1)
+        }
+        #Update the value of N 
+        N <- Phi_t*N + 1
+        #cat(Att,'\n')
+        
+        # Assume human chooses action probabilistically using softmax on Attraction values
+        probs <- exp(lambda*Att)/sum(exp(lambda*Att))
+        
+        # Get actual human action and compute likelihood
+        game_data[t,"h_action"] <- sample(game_actions, size=1,prob=probs)
+        act_index <- match(game_data[t,"h_action"], game_actions)
+        lik_hum[t] <- probs[[act_index]]
+        
+        # Simulate opponent action and get score 
+        game_data[t,"a_action"] <- as.character(filter(pred_file_opp,human_previous == as.character(game_data[t-1,"h_action"]) & computer_previous == as.character(game_data[t-1,"a_action"]))[condition][1,])
+        game_data[t,"score"] <- reward[game_data[t,"h_action"], game_data[t,"a_action"]]
+        
+      }
+      
+    }# End for loop over rounds
+    data <- rbind(data,game_data)
+    
+  }# end of game for loop
+  return(data)
+  
+
+  
+}
+  
+```
+
+
+```{r}
+## Generate N lambdas in chosen interval, get the corresponding datasets of actions and scores, use Self_EWA to infer Lambda from these datasets. 
+EWA_self_simulation <- data.frame()
+lambdas = runif(100, 0, 10)
+num_rounds <- 50 
+count <- 1 
+
+for(lambda in lambdas){
+  
+  EWA_self_simulation[count,"real_lambda"] <- lambda
+  tdat <- gen_data(par = lambda, num_rounds)
+
+  # Fit various models to generated data (from S_EWA type player)
+  optim_S_EWA  <- DEoptim(fn=EWA_self, lower = 0.0, upper = 10.0, data=tdat, "-2loglik", control=list(trace = FALSE,parallelType=1))
+
+  optim_EWA    <- DEoptim(fn=EWA_par,lower = c(0,0,0,0), upper = c(20,1,1,20), data=tdat,"-2loglik",control=list(trace = FALSE,parallelType=1))
+  
+  optim_QL     <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+  
+  optim_NB     <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  
+  # Get condition
+  EWA_self_simulation[count, "condition"]  <- as.character(tdat$condition[1])
+  
+  
+  # Get best fit parameters and -2 Log Likelihoods for all models 
+
+  
+  # Self-tuning EWA 
+  EWA_self_simulation[count, "S_EWA_infrd_lambda"] <- optim_S_EWA$optim$bestmem[1]
+  EWA_self_simulation[count, "S_EWA_2LL"]          <- optim_S_EWA$optim$bestval
+  
+  #Parametric EWA
+  EWA_self_simulation[count, "EWA_infrd_phi"]    <- optim_EWA$optim$bestmem[1]
+  EWA_self_simulation[count, "EWA_infrd_delta"]  <- optim_EWA$optim$bestmem[2]
+  EWA_self_simulation[count, "EWA_infrd_rho"]    <- optim_EWA$optim$bestmem[3]
+  EWA_self_simulation[count, "EWA_infrd_lambda"] <- optim_EWA$optim$bestmem[4]
+  EWA_self_simulation[count, "EWA_2LL"]          <- optim_EWA$optim$bestval
+  
+  # Q-Learning
+  EWA_self_simulation[count, "QL_infrd_beta"]   <- optim_QL$par[1]
+  EWA_self_simulation[count, "QL_infrd_alpha"]  <- optim_QL$par[2]
+  EWA_self_simulation[count, "QL_2LL"]          <- optim_QL$value
+  
+  # Naive Bayes (nopts-arm bandit with prior vec transfered across games)
+  EWA_self_simulation[count, "NB_infrd_theta"] <- optim_NB$par[1]
+  EWA_self_simulation[count, "NB_infrd_eps"]   <- optim_NB$par[2]
+  EWA_self_simulation[count, "NB_2LL"]         <- optim_NB$value
+  
+  # Random
+  EWA_self_simulation[count, "Random_2LL"]     <- -2*(2*num_rounds*log(1/3) + num_rounds*log(1/5))
+  
+  count <- count + 1
+}
+
+save(EWA_self_simulation,file="EWA_self_simulation.RData")
+
+```
+
+```{r}
+plot(EWA_self_simulation$real_lambda,EWA_self_simulation$S_EWA_infrd_lambda)
+# cor.test(EWA_self_simulation$real_lambda, EWA_self_simulation$S_EWA_infrd_lambda, method=c("pearson", "kendall", "spearman"))
+
+# create a table with best fitting models by condition
+table(EWA_self_simulation[, "condition"],c("random","Naive_Bayes","QL","EWA","S_EWA")[apply(EWA_self_simulation[,c("Random_2LL","NB_2LL","QL_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+```
+```{r}
+
+```

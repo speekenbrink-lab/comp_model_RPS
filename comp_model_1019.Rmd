@@ -321,7 +321,7 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value) {
   }
   if(return_value == "-2loglik") {
     ret <- -2*sum(log(lik_hum))
-    if(is.infinite(ret)) {
+    if(is.infinite(ret) || is.nan(ret)) {
       return(1e+300)
     } else {
       return(ret)
@@ -376,7 +376,7 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
   # data : participant and ai choice data.
   # Returns Q-values per trial and predicts choice using softmax
   beta <- par[1]
-  lambda <- par[2]
+  alpha <- par[2]
   Q_vals_RPS = matrix(0.0,3)
   names(Q_vals_RPS) <- c("R","P","S")
   Q_vals_FWG = matrix(0.0,3)
@@ -397,7 +397,7 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
       # Get reward and past human action
       reward <- as.numeric(data[t-1,"score"])
       h_act_prev <- as.character(data[t-1,"h_action"])
-      Q_vals[h_act_prev] <- Q_vals[[h_act_prev]] + as.numeric(lambda)*( reward - Q_vals[[h_act_prev]])
+      Q_vals[h_act_prev] <- Q_vals[[h_act_prev]] + as.numeric(alpha)*( reward - Q_vals[[h_act_prev]])
       
       # cat(Q_vals,"\n") 
 
@@ -412,7 +412,7 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
   }
   if(return_value == "-2loglik") {
     ret <- -2*sum(log(lik_hum))
-    if(is.infinite(ret)) {
+    if(is.infinite(ret) || is.nan(ret)) {
       return(1e+300)
     } else {
       return(ret)
@@ -431,7 +431,7 @@ QL_modelling <- list()
 for(id in unique(dat$human_id)) {
   QL_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
-  QL_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0.001,0.001), upper = c(10,0.99), method="L-BFGS-B")
+  QL_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
 }
 
 save(QL_modelling,file="QL_modelling.RData")
@@ -581,7 +581,7 @@ EWA_self <- function(par,data,return_value){
       N <- 1.0
 
       R_t <- rep(0.0,nopts)
-      H_t = R_t
+      H_t <- R_t
       
     } else {
       
@@ -629,7 +629,7 @@ EWA_self <- function(par,data,return_value){
   
  if(return_value == "-2loglik") {
     ret <- -2*sum(log(lik_hum))
-    if(is.infinite(ret)) {
+    if(is.infinite(ret) || is.nan(ret)) {
       return(1e+300)
     } else {
       return(ret)
@@ -644,10 +644,20 @@ EWA_self <- function(par,data,return_value){
 ```{r}
 ##Plotting self_tuning EWA likelihood function for lambda from 0 to 100 
 
-lambdas <- seq(0,100,1)
-data_test <- subset(data,human_id =="oXdDF_U-Dft2ja2lAAAs")
+lambdas <- seq(1,10,0.01)
+count = 0.0
 
-plot(lambdas,EWA_self(lambdas,data_test,"-2loglik"))
+
+
+for(id in unique(dat$human_id)) {
+  if (count <= 15) {
+      tdat <- subset(dat,human_id == id)
+      likelihoods <- sapply(lambdas, EWA_self, tdat, "-2loglik")
+      plot(lambdas,likelihoods)
+      count <- count + 1
+  }
+}
+
 ```
   
 ## Fitting Self-Tuning EWA to data 
@@ -691,7 +701,7 @@ All_results <- rbind(All_results,
                          # beta ->  inverse temperature parameter in softmax choice function
                          "QL_Beta" = QL_modelling[[id]]$par[1],
                          # lambda -> learning rate in QL update
-                         "QL_beta" = QL_modelling[[id]]$par[2],
+                         "QL_alpha" = QL_modelling[[id]]$par[2],
                          "QL_BIC" = QL_modelling[[id]]$value + 2*log(150),
 
                          # Parametric EWA
@@ -711,6 +721,7 @@ All_results <- rbind(All_results,
                          #Lambda is a parameter of the softmax choice function (inverse Temperature)
                          "EWA_self_Lambda" = EWA_self_modelling[[id]]$optim$bestmem[1],
                          # Parametric EWA BIC
+                         "EWA_self_2LL" = EWA_self_modelling[[id]]$optim$bestval,
                          "EWA_self_BIC" = EWA_self_modelling[[id]]$optim$bestval + 1*log(150)
                          ))
 }
