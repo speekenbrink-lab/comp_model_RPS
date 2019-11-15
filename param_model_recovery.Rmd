@@ -26,10 +26,10 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r}
-# Build function that will simulate a self tuning EWA player given parameter Lambda, and generate actions for 50 rounds
+## Build function that will simulate a self tuning EWA player given parameter Lambda, and generate actions for 50 rounds
 # of each game. 
+```{r}
+
 # NOTE : haven't introduced noise in either human or computer actions. 
 
 gen_data <- function(par,num_rounds){
@@ -137,11 +137,11 @@ gen_data <- function(par,num_rounds){
   
 ```
 
-
+## Generate 100 datasets, one for each lambda and fit the 4 models to it : NB, QL, EWA and S_EWA 
 ```{r}
 ## Generate N lambdas in chosen interval, get the corresponding datasets of actions and scores, use Self_EWA to infer Lambda from these datasets. 
 EWA_self_simulation <- data.frame()
-lambdas = runif(100, 0, 10)
+lambdas = runif(100, 0, 1)
 num_rounds <- 50 
 count <- 1 
 
@@ -193,16 +193,23 @@ for(lambda in lambdas){
   count <- count + 1
 }
 
-save(EWA_self_simulation,file="EWA_self_simulation.RData")
+save(EWA_self_simulation,file="EWA_low_lambda_simulation.RData")
 
 ```
 
-```{r}
-plot(EWA_self_simulation$real_lambda,EWA_self_simulation$S_EWA_infrd_lambda)
-# cor.test(EWA_self_simulation$real_lambda, EWA_self_simulation$S_EWA_infrd_lambda, method=c("pearson", "kendall", "spearman"))
 
-# create a table with best fitting models by condition
-table(EWA_self_simulation[, "condition"],c("random","Naive_Bayes","QL","EWA","S_EWA")[apply(EWA_self_simulation[,c("Random_2LL","NB_2LL","QL_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+## Plotting parameter recovery scatter plots and model recovery results
+```{r}
+
+plot(EWA_self_simulation$real_lambda,EWA_self_simulation$S_EWA_infrd_lambda)
+# We can evaluate the correlation between real and infered lambdas and test it for significance
+cor.test(EWA_self_simulation$real_lambda, EWA_self_simulation$S_EWA_infrd_lambda, method=c("pearson", "kendall", "spearman"))
+
+# Model recovery: create a table with best fitting models by condition
+model_recov_results <- table(EWA_self_simulation[, "condition"],c("random","N_Bayes","QL","EWA","S_EWA")[apply(EWA_self_simulation[,c("Random_2LL","NB_2LL","QL_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+
+ write.csv(model_recov_results,file="model_recov_results.csv",row.names = TRUE)
+ kable(model_recov_results)
 ```
 ```{r}
 
