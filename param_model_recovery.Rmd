@@ -26,6 +26,7 @@ plot(pressure)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
 ## Build function that will simulate a self tuning EWA player given parameter Lambda, and generate actions for 50 rounds
 # of each game. 
 ```{r}
