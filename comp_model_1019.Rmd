@@ -953,18 +953,27 @@ cor.test(Corr_Tr_model$BIC_diff_rand, Corr_Tr_model$Early_game_score, method=c("
 Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", .default = "Random")
 
 model <- factor(Corr_Tr_model$model)
-tapply(Corr_Tr_model$Total_score, model, mean) 
+tapply(Corr_Tr_model$Total_score, model, mean)
 # Compute the analysis of variance
 res.aov <- aov(Total_score ~ model, data = Corr_Tr_model)
 # Summary of the analysis
 summary(res.aov)
+TukeyHSD(res.aov)
 
-pairwise.t.test(Corr_Tr_model$Total_score, model, p.adj = "holm")
+## What if we remove from data people who play randomly and then compare Transfer v No Transfer? 
+Bayes_only <- subset(Corr_Tr_model, model != "Random" )
+
+Bayes.aov <- aov(Early_game_score ~ model, data = Bayes_only)
+# Summary of the analysis
+summary(Bayes.aov)
+TukeyHSD(Bayes.aov)
+
+wilcox.test(Early_game_score ~ model,data = Bayes_only) 
 
 ``` 
 #Scores are indeed higher but difference is not statistically significant. 
 
-## What next?: Fitting models that explicitly take into account opponent strategy. LOLA? Won't work, it suffers from same issues as normal QL in that most states are not visited during game play. 
+## What next?: Fitting models that explicitly take into account opponent strategy. LOLA? Won't work, it suffers from same issues as normal QL in that most states are not visited during game play. Influence model? Like belief lerning. it still has no sequential memory, still computes distribution on beliefs. We need to incorporate models that can mimic human memory by looking at history of play and leverage sequence prediction capabilities. 
 
 
   
