@@ -259,7 +259,7 @@ best_response <- function(game,ai_action){
 ```
 
 ```{r}
-naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer) {
+naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=TRUE) {
   # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
   # Epsilone: parameter controlling noise in human choice. Probability human will deviate from its best response. In [0,1].
   # dat = data subset for one participant
@@ -469,9 +469,7 @@ for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   QL_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
 }
-
 save(QL_modelling,file="QL_modelling.RData")
-
 
 
 ```
@@ -479,16 +477,17 @@ save(QL_modelling,file="QL_modelling.RData")
 ##Q-Learning with state space consisting of last round play
 ```{r}
 
-Q_learn_states <- function(par,data,return_value){
-  # beta= inverse temperature parameter in softmax choice function
-  # lambda = learning rate (one per game?)
+Q_learn_states <- function(par,data,return_value,gamma){
+  # Par[1] -> beta= inverse temperature parameter in softmax choice function
+  # Par[2] -> lambda = learning rate (one per game?)
   # data : participant and ai choice data.
   # return_value=c("-2loglik","likelihood_by_trial")
+  # Gamma is discount factor for future rewards 
   # Returns Q-values per trial and predicts choice using softmax
   beta <- par[1]
   alpha <- par[2]
-  #fix discount factor at 0.9 
-  gamma <- 0.9 
+
+  #gamma <- 0.9 
 
   #Define matrix of state spaces for each game 
   G1 <- expand.grid(c("R", "P", "S"),c("R", "P", "S"))
@@ -500,13 +499,13 @@ Q_learn_states <- function(par,data,return_value){
   G3 <- expand.grid(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
   states_NUM <- paste0(G3$Var1,G3$Var2)
   
-  Q_vals_RPS = matrix(0.0,9,3)
+  Q_vals_RPS = matrix(-0.5,9,3)
   dimnames(Q_vals_RPS) = list(states_RPS, c("R", "P", "S"))
 
-  Q_vals_FWG = matrix(0.0,9,3)
+  Q_vals_FWG = matrix(-0.5,9,3)
   dimnames(Q_vals_FWG) = list(states_FWG, c("F", "W", "G"))
   
-  Q_vals_NUM = matrix(0.0,25,5)
+  Q_vals_NUM = matrix(-0.5,25,5)
   dimnames(Q_vals_NUM) = list(states_NUM, c("1", "2", "3", "4", "5"))
  
   lik_hum <- matrix(0.0,nrow(data))
@@ -521,23 +520,23 @@ Q_learn_states <- function(par,data,return_value){
       state_vec <- switch(as.character(t_game),rps=states_RPS,fwg = states_FWG, numbers = states_NUM)
       lik_hum[t] <- 1/nopts
       # Randomly select prev_state and actions for first round
-      state_prev  <- sample(state_vec, size = 1)
-      h_act_prev <- sample(colnames(Q_vals), size =1)
-      a_act_prev <- sample(colnames(Q_vals), size =1)
+      curr_state <- sample(state_vec, size = 1)
+      h_act <- sample(colnames(Q_vals), size =1)
+      ai_act <- sample(colnames(Q_vals), size =1)
       reward <- 0 
       
     } else {
-      # Get reward and past human action
+      # Get past human action and associated reward 
+      h_act <- as.character(data[t-1,"h_action"])
+      ai_act <- as.character(data[t-1,"a_action"])
       reward <- as.numeric(data[t-1,"score"])
-      h_act_prev <- as.character(data[t-1,"h_action"])
-      a_act_prev <- as.character(data[t-1,"a_action"])
     }
-    # cat(state_prev, " This is the previous state", "\n")
-    new_state <- paste0(h_act_prev,a_act_prev)
+    # cat(curr_state, " This is the previous state", "\n")
+    new_state <- paste0(h_act,ai_act)
     # cat(new_state,"This is new state","\n")
     
-    # Q_learning: update rule 
-    Q_vals[state_prev, a_act_prev] <- Q_vals[state_prev, a_act_prev] + alpha*( reward + gamma*max(Q_vals[new_state,])- Q_vals[state_prev, a_act_prev])
+    # Q_learning: update rule (time  = t-1)
+    Q_vals[curr_state, h_act] <- Q_vals[curr_state, h_act] + alpha*( reward + gamma*max(Q_vals[new_state,]) - Q_vals[curr_state, h_act])
     
     # Assume human chooses action probabilistically using softmax on Q values
     probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
@@ -549,7 +548,7 @@ Q_learn_states <- function(par,data,return_value){
     lik_hum[t] <- probs[[act_index]]
       
     # Update state
-    state_prev <- new_state 
+    curr_state<- new_state 
     #}
   }
   if(return_value == "-2loglik") {
@@ -575,10 +574,38 @@ QL_states_modelling <- list()
 for(id in unique(dat$human_id)) {
   QL_states_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
-  QL_states_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn_states,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+  # QL_states_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn_states,gr = NULL, data=tdat,"-2loglik", gamma =0 , lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+
+   QL_states_modelling[[id]] <- DEoptim(fn=Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE,parallelType=1))
 }
 
-save(QL_states_modelling,file="QL_states_modelling.RData")
+save(QL_states_modelling, file="QL_states_modelling.RData")
+
+
+# QL_states_gamma <- list()
+# for(id in unique(dat$human_id)) {
+#   QL_states_gamma[[id]] <- list()
+#   tdat <- subset(dat,human_id == id)
+#   QL_states_gamma[[id]] <- DEoptim(fn=Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0.9, control=list(trace = FALSE,parallelType=1))
+# }
+# save(QL_states_gamma,file="QL_states_gamma.RData")
+
+```
+
+```{r}
+# OK, let's compare BICs and parameters for Gamma = 0 and Gamma = 0.9 (both for initial Q-values of -0.5)
+
+compare_QL_states <- data.frame()
+for(id in unique(dat$human_id)) {
+compare_QL_states  <- rbind(compare_QL_states ,
+                       data.frame(
+                         "id" = id,
+                         "condition" = dat[dat$human_id==id,"condition"][1],
+                         "Zero_Gamma_BIC" = QL_states_modelling[[id]]$optim$bestval + 2*log(150),
+                         "High_gamma_BIC" = QL_states_gamma[[id]]$optim$bestval + 2*log(150),
+                         "diff" = QL_states_modelling[[id]]$optim$bestval - QL_states_gamma[[id]]$optim$bestval
+                       ))
+}
 
 ```
 #Notes: Q-Learning as done above is far from optimal. The reason is that most states are never visited during play ( anecdotal evidence, about 40-60% in RPS/FWG and 10-20% in NUM). This method needs a lot more rounds to start modelling players behavior correctly. 
@@ -912,7 +939,8 @@ Corr_Tr_model <- data.frame()
 for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   tot_score <- sum(tdat$score)
-  early_dat <- subset(tdat,between(tdat$round,2,5) & (game =="fwg" | game =="numbers") )
+  tot_time <- sum(tdat$human_rt)
+  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(All_results, ID == id)
   min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
@@ -923,6 +951,7 @@ for(id in unique(dat$human_id)) {
                        data.frame(
                          "id" = id,
                          "condition" = dat[dat$human_id==id,"condition"][1],
+                         "Total_time" = sum(tdat$human_rt),
                          "BIC_diff_Bayes" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
                          "BIC_diff_rand" =  id_results[,"Random_BIC"] - min_BIC,
                          "Early_game_score" = tr_score,
@@ -953,7 +982,9 @@ cor.test(Corr_Tr_model$BIC_diff_rand, Corr_Tr_model$Early_game_score, method=c("
 Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", .default = "Random")
 
 model <- factor(Corr_Tr_model$model)
+# Total score by best predictive model 
 tapply(Corr_Tr_model$Total_score, model, mean)
+
 # Compute the analysis of variance
 res.aov <- aov(Total_score ~ model, data = Corr_Tr_model)
 # Summary of the analysis
@@ -969,6 +1000,14 @@ summary(Bayes.aov)
 TukeyHSD(Bayes.aov)
 
 wilcox.test(Early_game_score ~ model,data = Bayes_only) 
+
+
+# Total time by best predictive model
+tapply(Corr_Tr_model$Total_time, model, mean)
+time.aov <- aov(Total_time ~ model, data = Corr_Tr_model)
+# Summary of the analysis
+summary(time.aov)
+TukeyHSD(time.aov)
 
 ``` 
 #Scores are indeed higher but difference is not statistically significant. 
