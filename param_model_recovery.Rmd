@@ -27,6 +27,268 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+### Parameter and model recovery Q-Learning with past round as state
+
+
+## Build function that will simulate a QL_states player given parameters alpha and beta, and generate actions for 50 rounds
+## of each game. 
+```{r}
+gen_data_QL_states <- function(beta, alpha, num_rounds, gamma) {
+  
+  games <- c("rps","fwg","numbers")
+  condition <- sample(c("level1","level2"),1)
+  data <- data.frame()
+  
+  #Define matrix of state spaces for each game 
+  G1 <- expand.grid(c("R", "P", "S"),c("R", "P", "S"))
+  states_RPS <- paste0(G1$Var1,G1$Var2)
+
+  G2 <- expand.grid(c("F", "W", "G"), c("F", "W", "G"))
+  states_FWG <- paste0(G2$Var1,G2$Var2)
+
+  G3 <- expand.grid(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
+  states_NUM <- paste0(G3$Var1,G3$Var2)
+  
+  # Initialize Matrix of Q-values 
+  Q_vals_RPS = matrix(-0.5,9,3)
+  dimnames(Q_vals_RPS) = list(states_RPS, c("R", "P", "S"))
+
+  Q_vals_FWG = matrix(-0.5,9,3)
+  dimnames(Q_vals_FWG) = list(states_FWG, c("F", "W", "G"))
+  
+  Q_vals_NUM = matrix(-0.5,25,5)
+  dimnames(Q_vals_NUM) = list(states_NUM, c("1", "2", "3", "4", "5"))
+  
+  # Build tables that give reward for human player(Row) vs ai player(column) actions. 
+  reward_RPS <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_RPS) = list(c("R", "P", "S"), c("R", "P", "S"))
+  
+  reward_FWG <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_FWG) = list(c("F", "W", "G"), c("F", "W", "G"))
+  
+  reward_NUM <- t(matrix(c(0,-1,0,0,1,1,0,-1,0,0,0,1,0,-1,0,0,0,1,0,-1,-1,0,0,1,0),nrow=5, ncol=5))
+  dimnames(reward_NUM) = list(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
+ 
+  
+   for (t_game in games){
+      # Initiate dataframe
+      game_data <- setNames(data.frame(matrix(ncol = 6, nrow = num_rounds)), c("condition","game", "round", "h_action","a_action","score"))
+      
+      # Initialize attraction vector, rewards + randomly select first actions
+      Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, numbers = Q_vals_NUM)
+      state_vec <- switch(as.character(t_game),rps=states_RPS,fwg = states_FWG, numbers = states_NUM)
+      game_actions <- switch(as.character(t_game),rps=c("R", "P", "S"),fwg = c("F", "W", "G"), numbers = c("1", "2", "3", "4", "5"))
+      reward <- switch(as.character(t_game), rps=reward_RPS, fwg=reward_FWG, numbers=reward_NUM)
+      pred_file_opp <- switch(as.character(t_game),rps = rps_predict_opp,fwg = fwg_predict_opp, numbers = numbers_predict_opp)
+      
+      
+      for(t in 1:num_rounds) {
+        if(t_game == "numbers") nopts <- 5 else nopts <- 3
+        game_data[t,"game"]<- t_game
+        game_data[t,"round"] <- t
+        game_data[t,"condition"] <- condition
+        
+        if(t == 1) {
+          # Initialize previous state randomly. 
+          prev_state  <- sample(state_vec, size = 1)
+          # Sample huamn and ai actions in first round randomly 
+          h_act <- as.character(sample(game_actions, 1 ))
+          ai_act  <- as.character(sample(game_actions, 1 ))
+          # Get reward from first round. 
+          R <- reward[h_act, ai_act]
+          
+          #Fill in table 
+          game_data[t,"h_action"] <- h_act
+          game_data[t,"a_action"] <- ai_act 
+          game_data[t,"score"] <- R
+
+        
+        } else {
+          h_act<- as.character(game_data[t-1,"h_action"])
+          ai_act <- as.character(game_data[t-1,"a_action"])
+          R <- as.numeric(game_data[t-1,"score"])
+      
+        }
+        
+        # cat("round", t, "\n")
+        # cat(prev_state, " This is the previous state", "\n")
+        # cat("observed human action",h_act, "\n")
+        # cat("observed ai action",ai_act, "\n")
+
+        ###### New state is the state we get to after human plays h_act and ai plays  ai_act 
+        new_state <- paste0(h_act,ai_act)
+        ######
+        # cat(new_state,"This is new state","\n")
+        # cat("this is alpha",alpha,"\n")
+        
+        # Q_learning: update rule
+        # cat("this is the Q vals",Q_vals[prev_state, h_act],"\n")
+        # cat("max Q_vals",max(Q_vals[new_state,]),"\n")
+        # cat("This is the reward", R ,"\n")
+        
+        Q_vals[prev_state, h_act] <- Q_vals[prev_state, h_act] + alpha*( R + gamma*max(Q_vals[new_state,]) - Q_vals[prev_state, h_act])
+        probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
+        
+        # Select human action with softmax
+        game_data[t,"h_action"] <- sample(game_actions, size=1,prob=probs)
+         
+        # Update state
+        prev_state <- new_state
+        
+         # Simulate opponent action and get score 
+        game_data[t,"a_action"] <- as.character(filter(pred_file_opp,human_previous == h_act & computer_previous == ai_act)[condition][1,])
+        # Calculate score 
+        game_data[t,"score"] <- reward[game_data[t,"h_action"], game_data[t,"a_action"]]
+        
+      }# End for loop over rounds
+      data <- rbind(data,game_data)
+  }
+  # end of game for loop
+  return(data)
+  
+}
+  
+# QL_dta <- gen_data_QL_states(5,0.5, num_rounds = 5, gamma = 0.9)
+
+```
+
+# Function to fit various models to simulated QL learner data and get table of results.
+```{r}
+
+fit_models <- function(tdat,num_rounds =50) {
+  
+  optim_S_EWA  <- DEoptim(fn=EWA_self, lower = 0.0, upper = 10.0, data=tdat, "-2loglik", control=list(trace = FALSE,parallelType=1))
+
+  optim_EWA    <- DEoptim(fn=EWA_par,lower = c(0,0,0,0), upper = c(20,1,1,20), data=tdat,"-2loglik",control=list(trace = FALSE,parallelType=1))
+  
+  #optim_QL     <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+  
+  optim_QL_states <- DEoptim(fn=Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE,parallelType=1))
+  
+  optim_NB     <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  
+  dataframe <-  data.frame(
+  
+  # Get condition
+   "condition"  = as.character(tdat$condition[1]),
+  
+  
+  # Get best fit parameters and -2 Log Likelihoods for all models 
+
+  # Self-tuning EWA 
+   "S_EWA_infrd_lambda" = optim_S_EWA$optim$bestmem[1],
+   "S_EWA_2LL"          = optim_S_EWA$optim$bestval,
+  
+  #Parametric EWA
+    "EWA_infrd_phi"    = optim_EWA$optim$bestmem[1],
+    "EWA_infrd_delta"  = optim_EWA$optim$bestmem[2],
+    "EWA_infrd_rho"    = optim_EWA$optim$bestmem[3],
+    "EWA_infrd_lambda" = optim_EWA$optim$bestmem[4],
+    "EWA_2LL"          = optim_EWA$optim$bestval,
+  
+  # Q-Learning with state as prev round
+    "QL_states_infrd_beta"   = optim_QL_states$optim$bestmem[1],
+    "QL_states_infrd_alpha"  = optim_QL_states$optim$bestmem[2],
+    "QL_states_2LL"          = optim_QL_states$optim$bestval,
+  
+  # Naive Bayes (nopts-arm bandit with prior vec transfered across games)
+    "NB_infrd_theta" = optim_NB$par[1],
+    "NB_infrd_eps"   = optim_NB$par[2],
+    "NB_2LL"         = optim_NB$value,
+  
+  # Random
+   "Random_2LL"     = -2*(2*num_rounds*log(1/3) + num_rounds*log(1/5))
+  
+  )
+  
+  return(dataframe) 
+  
+}
+ 
+
+sim_results <- function(beta,alpha,num_rounds,gamma) {
+  #Generate simulated data using Q_learning with previous round as state
+  tdat = gen_data_QL_states(beta,alpha, num_rounds, gamma)
+  # Fit various models to generated data 
+  df <- fit_models(tdat)
+  df$alpha <- alpha
+  df$beta <- beta
+  return(df)
+}
+
+```
+
+## Run simulation to generate datasets and return results of model fits 
+```{r}
+
+betas = runif(100,0,10)
+alphas = runif(100,0,1)
+
+pars <- as.array(mapply(c,betas, alphas, SIMPLIFY = FALSE ))
+
+list_of_dataframes <- mapply(FUN = sim_results, betas, alphas,num_rounds = 50.0, gamma = 0.0, SIMPLIFY = FALSE)
+
+QL_states_mod_recovery <- bind_rows(list_of_dataframes, .id = "column_label")
+
+save(QL_states_mod_recovery,file="QL_states_mod_recovery.RData")
+
+
+```
+
+## Plot infered vs real params, summarise model fitting results and return table of best fitting models
+```{r}
+# PLot real vs infered QL_states parameters
+plot(QL_states_mod_recovery$alpha,QL_states_mod_recovery$QL_states_infrd_alpha, xlab = "True alpha", ylab = " Infered alpha")
+plot(QL_states_mod_recovery$beta,QL_states_mod_recovery$QL_states_infrd_beta, xlab = "True beta", ylab = " Infered beta")
+
+
+# Evaluate the correlation between real and infered alphas/lambdas and test it for significance
+cor.test(QL_states_mod_recovery$alpha,QL_states_mod_recovery$QL_states_infrd_alpha, method= "spearman")
+cor.test(QL_states_mod_recovery$beta,QL_states_mod_recovery$QL_states_infrd_beta, method= "spearman")
+
+# Model recovery: create a table with best fitting models by condition
+QL_states_model_recov <- table(QL_states_mod_recovery[, "condition"],c("random","N_Bayes","QL_states","EWA","S_EWA")[apply(QL_states_mod_recovery[,c("Random_2LL","NB_2LL","QL_states_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+
+ write.csv(QL_states_model_recov,file="QL_states_model_recov.csv",row.names = TRUE)
+ kable(QL_states_model_recov)
+
+```
+
+## What if we increase num rounds to 200, does that improve model recovery? 
+```{r}
+betas = runif(100,0,10)
+alphas = runif(100,0,1)
+
+pars <- as.array(mapply(c,betas, alphas, SIMPLIFY = FALSE ))
+
+list_of_dataframes200 <- mapply(FUN = sim_results, betas, alphas,num_rounds = 200.0, gamma = 0.0, SIMPLIFY = FALSE)
+
+QL_states_recov_200 <- bind_rows(list_of_dataframes200, .id = "column_label")
+
+save(QL_states_recov_200,file="QL_states_recov_200.RData")
+
+# PLot real vs infered QL_states parameters
+plot(QL_states_recov_200$alpha,QL_states_recov_200$QL_states_infrd_alpha, xlab = "True alpha", ylab = " Infered alpha")
+plot(QL_states_recov_200$beta,QL_states_recov_200$QL_states_infrd_beta, xlab = "True beta", ylab = " Infered beta")
+
+
+# Evaluate the correlation between real and infered alphas/lambdas and test it for significance
+cor.test(QL_states_recov_200$alpha,QL_states_recov_200$QL_states_infrd_alpha, method= "spearman")
+cor.test(QL_states_recov_200$beta,QL_states_recov_200$QL_states_infrd_beta, method= "spearman")
+
+# Model recovery: create a table with best fitting models by condition
+QL_recov200_tab <- table(QL_states_recov_200[, "condition"],c("random","N_Bayes","QL_states","EWA","S_EWA")[apply(QL_states_recov_200[,c("Random_2LL","NB_2LL","QL_states_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+
+ write.csv(QL_recov200_tab,file="QL_recov200_tab",row.names = TRUE)
+ kable(QL_recov200_tab)
+```
+
+
+
+### Model and parameter recovery for Self Tuning EWA model
+
+
+
 ## Build function that will simulate a self tuning EWA player given parameter Lambda, and generate actions for 50 rounds
 # of each game. 
 ```{r}
@@ -138,240 +400,33 @@ gen_data_SEWA <- function(par,num_rounds){
   
 ```
 
-```{r}
-gen_data_QL_states <- function(beta, alpha, num_rounds, gamma) {
-  
-  games <- c("rps","fwg","numbers")
-  condition <- sample(c("level1","level2"),1)
-  data <- data.frame()
-  
-  #Define matrix of state spaces for each game 
-  G1 <- expand.grid(c("R", "P", "S"),c("R", "P", "S"))
-  states_RPS <- paste0(G1$Var1,G1$Var2)
-
-  G2 <- expand.grid(c("F", "W", "G"), c("F", "W", "G"))
-  states_FWG <- paste0(G2$Var1,G2$Var2)
-
-  G3 <- expand.grid(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
-  states_NUM <- paste0(G3$Var1,G3$Var2)
-  
-  # Initialize Matrix of Q-values 
-  Q_vals_RPS = matrix(-0.5,9,3)
-  dimnames(Q_vals_RPS) = list(states_RPS, c("R", "P", "S"))
-
-  Q_vals_FWG = matrix(-0.5,9,3)
-  dimnames(Q_vals_FWG) = list(states_FWG, c("F", "W", "G"))
-  
-  Q_vals_NUM = matrix(-0.5,25,5)
-  dimnames(Q_vals_NUM) = list(states_NUM, c("1", "2", "3", "4", "5"))
-  
-  # Build tables that give reward for human player(Row) vs ai player(column) actions. 
-  reward_RPS <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
-  dimnames(reward_RPS) = list(c("R", "P", "S"), c("R", "P", "S"))
-  
-  reward_FWG <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
-  dimnames(reward_FWG) = list(c("F", "W", "G"), c("F", "W", "G"))
-  
-  reward_NUM <- t(matrix(c(0,-1,0,0,1,1,0,-1,0,0,0,1,0,-1,0,0,0,1,0,-1,-1,0,0,1,0),nrow=5, ncol=5))
-  dimnames(reward_NUM) = list(c("1", "2", "3", "4", "5"), c("1", "2", "3", "4", "5"))
- 
-  
-   for (t_game in games){
-      # Initiate dataframe
-      game_data <- setNames(data.frame(matrix(ncol = 6, nrow = num_rounds)), c("condition","game", "round", "h_action","a_action","score"))
-      
-      # Initialize attraction vector, rewards + randomly select first actions
-      Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, numbers = Q_vals_NUM)
-      state_vec <- switch(as.character(t_game),rps=states_RPS,fwg = states_FWG, numbers = states_NUM)
-      game_actions <- switch(as.character(t_game),rps=c("R", "P", "S"),fwg = c("F", "W", "G"), numbers = c("1", "2", "3", "4", "5"))
-      reward <- switch(as.character(t_game), rps=reward_RPS, fwg=reward_FWG, numbers=reward_NUM)
-      pred_file_opp <- switch(as.character(t_game),rps = rps_predict_opp,fwg = fwg_predict_opp, numbers = numbers_predict_opp)
-      
-      
-      for(t in 1:num_rounds) {
-        if(t_game == "numbers") nopts <- 5 else nopts <- 3
-        game_data[t,"game"]<- t_game
-        game_data[t,"round"] <- t
-        game_data[t,"condition"] <- condition
-        
-        if(t == 1) {
-          # Initialize previous state randomly. 
-          prev_state  <- sample(state_vec, size = 1)
-          # Sample huamn and ai actions in first round randomly 
-          h_act <- as.character(sample(game_actions, 1 ))
-          ai_act  <- as.character(sample(game_actions, 1 ))
-          # Get reward from first round. 
-          R <- reward[h_act, ai_act]
-          
-          #Fill in table 
-          game_data[t,"h_action"] <- h_act
-          game_data[t,"a_action"] <- ai_act 
-          game_data[t,"score"] <- R
-
-        
-        } else {
-          h_act<- as.character(game_data[t-1,"h_action"])
-          ai_act <- as.character(game_data[t-1,"a_action"])
-          R <- as.numeric(game_data[t-1,"score"])
-      
-        }
-        
-        # cat("round", t, "\n")
-        # cat(prev_state, " This is the previous state", "\n")
-        # cat("observed human action",h_act, "\n")
-        # cat("observed ai action",ai_act, "\n")
-
-        ###### New state is the state we get to after human plays h_actand ai plays  ai_act 
-        new_state <- paste0(h_act,ai_act)
-        ######
-        # cat(new_state,"This is new state","\n")
-        # cat("this is alpha",alpha,"\n")
-        
-        # Q_learning: update rule
-        # cat("this is the Q vals",Q_vals[prev_state, h_act],"\n")
-        # cat("max Q_vals",max(Q_vals[new_state,]),"\n")
-        # cat("This is the reward", R ,"\n")
-        
-        Q_vals[prev_state, h_act] <- Q_vals[prev_state, h_act] + alpha*( R + gamma*max(Q_vals[new_state,]) - Q_vals[prev_state, h_act])
-        probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
-        
-        # Select human action with softmax
-        game_data[t,"h_action"] <- sample(game_actions, size=1,prob=probs)
-         
-        # Update state
-        prev_state <- new_state
-        
-         # Simulate opponent action and get score 
-        game_data[t,"a_action"] <- as.character(filter(pred_file_opp,human_previous == h_act & computer_previous == ai_act)[condition][1,])
-        # Calculate score 
-        game_data[t,"score"] <- reward[game_data[t,"h_action"], game_data[t,"a_action"]]
-        
-      }# End for loop over rounds
-      data <- rbind(data,game_data)
-  }
-  # end of game for loop
-  return(data)
-  
-}
-  
-QL_dta <- gen_data_QL_states(5,0.5, num_rounds = 5, gamma = 0.9)
-
-```
-
-```{r}
-
-# Function to fit various models to simulated data and get table of results.
- # Fit various models to generated data (from S_EWA type player)
-
-fit_models <- function(tdat,num_rounds =50) {
-  
-  optim_S_EWA  <- DEoptim(fn=EWA_self, lower = 0.0, upper = 10.0, data=tdat, "-2loglik", control=list(trace = FALSE,parallelType=1))
-
-  optim_EWA    <- DEoptim(fn=EWA_par,lower = c(0,0,0,0), upper = c(20,1,1,20), data=tdat,"-2loglik",control=list(trace = FALSE,parallelType=1))
-  
-  #optim_QL     <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
-  
-  optim_QL_states <- DEoptim(fn=Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE,parallelType=1))
-  
-  optim_NB     <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
-  
-  dataframe <-  data.frame(
-  
-  # Get condition
-   "condition"  = as.character(tdat$condition[1]),
-  
-  
-  # Get best fit parameters and -2 Log Likelihoods for all models 
-
-  # Self-tuning EWA 
-   "S_EWA_infrd_lambda" = optim_S_EWA$optim$bestmem[1],
-   "S_EWA_2LL"          = optim_S_EWA$optim$bestval,
-  
-  #Parametric EWA
-    "EWA_infrd_phi"    = optim_EWA$optim$bestmem[1],
-    "EWA_infrd_delta"  = optim_EWA$optim$bestmem[2],
-    "EWA_infrd_rho"    = optim_EWA$optim$bestmem[3],
-    "EWA_infrd_lambda" = optim_EWA$optim$bestmem[4],
-    "EWA_2LL"          = optim_EWA$optim$bestval,
-  
-  # Q-Learning with state as prev round
-    "QL_states_infrd_beta"   = optim_QL_states$optim$bestmem[1],
-    "QL_states_infrd_alpha"  = optim_QL_states$optim$bestmem[2],
-    "QL_states_2LL"          = optim_QL_states$optim$bestval,
-  
-  # Naive Bayes (nopts-arm bandit with prior vec transfered across games)
-    "NB_infrd_theta" = optim_NB$par[1],
-    "NB_infrd_eps"   = optim_NB$par[2],
-    "NB_2LL"         = optim_NB$value,
-  
-  # Random
-   "Random_2LL"     = -2*(2*num_rounds*log(1/3) + num_rounds*log(1/5))
-  
-  )
-  
-  return(dataframe) 
-  
-}
- 
-
-sim_results <- function(beta,alpha,num_rounds,gamma) {
-  #Generate simulated data using Q_learning with previous round as state
-  tdat = gen_data_QL_states(beta,alpha, num_rounds, gamma)
-  # Fit various models to generated data 
-  df <- fit_models(tdat)
-  df$alpha <- alpha
-  df$beta <- beta
-  return(df)
-}
-
-```
-
-## Run simulation to generate datasets and return results of model fits 
-```{r}
-
-betas = runif(100,0,10)
-alphas = runif(100,0,1)
-
-pars <- as.array(mapply(c,betas, alphas, SIMPLIFY = FALSE ))
-
-list_of_dataframes <- mapply(FUN = sim_results, betas, alphas,num_rounds = 50.0, gamma = 0.0, SIMPLIFY = FALSE)
-
-QL_states_mod_recovery <- bind_rows(list_of_dataframes, .id = "column_label")
-
-save(QL_states_mod_recovery,file="QL_states_mod_recovery.RData")
-
-# a <- c(1,2,3)
-# b <- c(4,5,6)
-# df <- data.frame(
-#   "first_var" = a,
-#   "second_var" = b
-# )
-# df
-
-```
 
 
 ## Generate 100 datasets using S_EWA agent, one for each lambda and fit the 4 models to it : NB, QL, EWA and S_EWA 
 ```{r}
 ## Generate N lambdas in chosen interval, get the corresponding datasets of actions and scores, use Self_EWA to infer Lambda from these datasets. 
 EWA_self_simulation <- data.frame()
-lambdas = runif(100, 0, 1)
+lambdas = runif(100, 0, 10)
 num_rounds <- 50 
 count <- 1 
 
-for(lambda in lambdas){
+for(lambda in lambdas) {
   
   EWA_self_simulation[count,"real_lambda"] <- lambda
   tdat <- gen_data_SEWA(par = lambda, num_rounds)
 
   # Fit various models to generated data (from S_EWA type player)
-  optim_S_EWA  <- DEoptim(fn=EWA_self, lower = 0.0, upper = 10.0, data=tdat, "-2loglik", control=list(trace = FALSE,parallelType=1))
+  optim_S_EWA  <- DEoptim(fn = EWA_self, lower = 0.0, upper = 10.0, data= tdat, "-2loglik", control = list(trace = FALSE,parallelType =1))
 
-  optim_EWA    <- DEoptim(fn=EWA_par,lower = c(0,0,0,0), upper = c(20,1,1,20), data=tdat,"-2loglik",control=list(trace = FALSE,parallelType=1))
+  optim_EWA    <- DEoptim(fn = EWA_par,lower = c(0,0,0,0), upper = c(20,1,1,20), data=tdat,"-2loglik",control= list(trace = FALSE,parallelType=1))
   
-  optim_QL     <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+  # optim_QL     <- optim(c(1,0.1),fn=Q_learn,gr = NULL, data=tdat,"-2loglik", lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
   
-  optim_NB     <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  optim_QL_states <- DEoptim(fn = Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE,parallelType=1))
+  
+  
+  
+  optim_NB     <- optim(c(0.1,0.1),fn = naive_bayes, gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method ="L-BFGS-B")
   
   # Get condition
   EWA_self_simulation[count, "condition"]  <- as.character(tdat$condition[1])
@@ -390,10 +445,12 @@ for(lambda in lambdas){
   EWA_self_simulation[count, "EWA_infrd_lambda"] <- optim_EWA$optim$bestmem[4]
   EWA_self_simulation[count, "EWA_2LL"]          <- optim_EWA$optim$bestval
   
-  # Q-Learning
-  EWA_self_simulation[count, "QL_infrd_beta"]   <- optim_QL$par[1]
-  EWA_self_simulation[count, "QL_infrd_alpha"]  <- optim_QL$par[2]
-  EWA_self_simulation[count, "QL_2LL"]          <- optim_QL$value
+  # Q-Learning with previous round as state
+  EWA_self_simulation[count, "QL_infrd_beta"]   <- optim_QL_states$optim$bestmem[1]
+  EWA_self_simulation[count, "QL_infrd_alpha"]  <- optim_QL_states$optim$bestmem[2]
+  EWA_self_simulation[count, "QL_2LL"]          <- optim_QL_states$optim$bestval
+  
+
   
   # Naive Bayes (nopts-arm bandit with prior vec transfered across games)
   EWA_self_simulation[count, "NB_infrd_theta"] <- optim_NB$par[1]
@@ -406,7 +463,7 @@ for(lambda in lambdas){
   count <- count + 1
 }
 
-save(EWA_self_simulation,file="EWA_low_lambda_simulation.RData")
+save(EWA_self_simulation,file="SEWA_simulation.RData")
 
 ```
 
@@ -416,18 +473,16 @@ save(EWA_self_simulation,file="EWA_low_lambda_simulation.RData")
 
 plot(EWA_self_simulation$real_lambda,EWA_self_simulation$S_EWA_infrd_lambda)
 # We can evaluate the correlation between real and infered lambdas and test it for significance
-cor.test(EWA_self_simulation$real_lambda, EWA_self_simulation$S_EWA_infrd_lambda, method=c("pearson", "kendall", "spearman"))
+cor.test(EWA_self_simulation$real_lambda, EWA_self_simulation$S_EWA_infrd_lambda, method=c("spearman"))
 
 # Model recovery: create a table with best fitting models by condition
-model_recov_results <- table(EWA_self_simulation[, "condition"],c("random","N_Bayes","QL","EWA","S_EWA")[apply(EWA_self_simulation[,c("Random_2LL","NB_2LL","QL_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
+SEWA_recov_results <- table(EWA_self_simulation[, "condition"],c("random","N_Bayes","QL","EWA","S_EWA")[apply(EWA_self_simulation[,c("Random_2LL","NB_2LL","QL_2LL","EWA_2LL","S_EWA_2LL")],1,which.min)])
 
- write.csv(model_recov_results,file="model_recov_results.csv",row.names = TRUE)
- kable(model_recov_results)
+ write.csv(SEWA_recov_results,file="SEWA_recov_results.csv",row.names = TRUE)
+ kable(SEWA_recov_results)
 ```
 
 
 ```{r}
-a = c(1,2,3)
-b = c(4,5,6)
-mapply(c, a, b, SIMPLIFY=FALSE)
+  
 ```

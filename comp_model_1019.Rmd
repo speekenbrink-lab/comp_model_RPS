@@ -73,7 +73,7 @@ my_logistic <- function(x) {
 
 ```
 
-## Modelling fixed type participant
+## Modelling fixed level-k type participant
 ```{r}
 # FIXED STRATEGIES (level-k) 
 # create a function which computes the -2 log Likelihood over the three games for a particular strategy
@@ -201,7 +201,7 @@ my_logistic <- function(x) {
 ```
 
 
-## Fixed type: Likelihood of the different models by trial
+## Fixed level-k type: Likelihood of the different models by trial
 
 This plot ks based on the three parameter versions of each strategy, and shows the average probability according to each model of participants' choices. It can be seen that, compared to the RPS game, where the fit grows slowly over trials, the fit in the later games increases much more rapidly.
 
@@ -236,9 +236,20 @@ This plot ks based on the three parameter versions of each strategy, and shows t
 
 
 
+
+
+
+#### New work 
+
+
 ## Fitting simple Bayesian learning model with flat prior
 ```{r}
 
+```
+
+#Fit a bayesian model to observed human play. Prior is vector of possible level-k opponent strategies.
+```{r}
+# Function to produce best reponse to ai_action 
 best_response <- function(game,ai_action){
   if (game == "rps"){
     if (ai_action == "R") {return("P")}
@@ -256,10 +267,8 @@ best_response <- function(game,ai_action){
     else if (ai_action == "5") {return("1")}
   }
 }
-```
 
-```{r}
-naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=TRUE) {
+naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer) {
   # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
   # Epsilone: parameter controlling noise in human choice. Probability human will deviate from its best response. In [0,1].
   # dat = data subset for one participant
@@ -273,6 +282,11 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=
   eps <- par[2]
   
   num_strat = length(opp_strategy_vec) 
+  
+  # Load tables predicting oppponent move
+  rps_predict_opp <- read.csv("rps_predict_opp.csv")
+  fwg_predict_opp <- read.csv("fwg_predict_opp.csv")
+  numbers_predict_opp <- read.csv("numbers_predict_opp.csv")
 
   #lik_opp is a vector that holds and update probability distribution of opp strategy given actions.
   lik_opp <- matrix(0.0,num_strat, nrow(data))
@@ -287,12 +301,13 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=
   for(t in 1:nrow(data)) {
     t_game <- data[t,"game"]
     pred_file_opp <- switch(as.character(t_game),rps = rps_predict_opp,fwg = fwg_predict_opp, numbers = numbers_predict_opp)
+    
     if(t_game == "numbers") nopts <- 5 else nopts <- 3
     if(data[t,"round"] == 1) {
       # first round is uniform prediction
-      pred <- NA
+      pred_opp <- NA
       lik_hum[t] <- 1/nopts
-      if (opp_mod_transfer) {
+      if (!(opp_mod_transfer)) {
         opp_prior_vec <- rep(1/num_strat, num_strat)
         lik_opp[,t] <- opp_prior_vec
         }
@@ -302,10 +317,10 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=
       # get prediction of opponent action from CSV files
       for (strategy in opp_strategy_vec) {
         k = match(strategy,opp_strategy_vec)
-        pred_opp <- as.character(filter(pred_file_opp,human_previous == as.character(data[t-1,"h_action"]) & computer_previous == as.character(data[t-1,"a_action"]))[strategy][1,])
+        pred_opp <- as.character(filter(pred_file_opp, pred_file_opp$human_previous == as.character(data[t-1,"h_action"]) & pred_file_opp$computer_previous == as.character(data[t-1,"a_action"]))[[k]])
+        
         # Given opponent action predicted, what would be human action best response for each opp strat
         br_hum[[k]] <- best_response(t_game,as.character(pred_opp))
-        #cat(as.character(br_hum[[k]]), "\n")
         
         # Multiply prior by likelihood of observation to get posterior. Done here ot take advantage of For loop. 
         if(as.character(data[t,"a_action"]) == pred_opp) {
@@ -316,7 +331,6 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=
       }
       # Get which opponent strategy human current actn maps to (if index = 0 then human current action is br to level-0 comp_strat...)
       indices <- which(br_hum %in% as.character(data[t,"h_action"]))
-      #cat(as.character(indices),  "\n")
 
       # THEN likelihood of current human action is just prior on opponent vec (haven't updated priors with curr opp act yet)
       # if action is not predicted by any level-k OM, assume human chooses randomly with prob eps
@@ -341,10 +355,11 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer=
       return(ret)
     }
   }
-  if(return_value == "likelihood_by_trial") return(lik_hum)
+  #if(return_value == "likelihood_by_trial") return(lik_hum)
 }
 
 ```
+
 
 ```{r}
 
@@ -353,22 +368,27 @@ TR_bayes_modelling <- list()
 for(id in unique(dat$human_id)) {
   TR_bayes_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
-# TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = 0.0, upper = 1.0, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE,parallelType=1))
+  
+  TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
 
-TR_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+# TR_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
-
 save(TR_bayes_modelling,file="TR_bayes_modelling.RData")
 
-# Fitting a bayesiam model with NO TRANSFER of opp strat distribution between games 
+```
+
+
+# Fitting a bayesian model with NO TRANSFER of opp strat distribution between games 
+```{r}
 NT_bayes_modelling <- list()
 for(id in unique(dat$human_id)) {
   NT_bayes_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
   
-  # NT_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = 0.0, upper = 1.0, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE,parallelType=1))
+  
+  NT_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
 
-  NT_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE ,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+#   NT_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE ,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
 
 save(NT_bayes_modelling,file="NT_bayes_modelling.RData")
@@ -376,7 +396,7 @@ save(NT_bayes_modelling,file="NT_bayes_modelling.RData")
 ```
 
 
-
+# Summarise results in dataframe for both transfer and no transfer models 
 ```{r}
 Nbayes_par_results <- data.frame()
 for(id in unique(dat$human_id)) {
@@ -403,7 +423,7 @@ Nbayes_par_results <- rbind(Nbayes_par_results,
 ```
 
 
-## Q-learning
+## Q-learning (Basic)
 ```{r}
 Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
   # actions
@@ -461,7 +481,7 @@ Q_learn <- function(par,data,return_value=c("-2loglik","likelihood_by_trial")){
 
 ```
 
-##Q-learning fit
+## Q-learning fit
 ```{r}
 QL_modelling <- list()
 for(id in unique(dat$human_id)) {
@@ -474,7 +494,9 @@ save(QL_modelling,file="QL_modelling.RData")
 
 ```
 
-##Q-Learning with state space consisting of last round play
+
+
+## Q-Learning with state space consisting of last round play
 ```{r}
 
 Q_learn_states <- function(par,data,return_value,gamma){
@@ -531,6 +553,8 @@ Q_learn_states <- function(par,data,return_value,gamma){
       ai_act <- as.character(data[t-1,"a_action"])
       reward <- as.numeric(data[t-1,"score"])
     }
+    
+    
     # cat(curr_state, " This is the previous state", "\n")
     new_state <- paste0(h_act,ai_act)
     # cat(new_state,"This is new state","\n")
@@ -844,7 +868,7 @@ for(id in unique(dat$human_id)) {
 
 save(EWA_self_modelling,file="EWA_self_modelling.RData")
 
-
+  
 ```
 ```{r}
 # cat(EWA_self_modelling[["38VxtUSv_h6RR5-tAAA2"]]$optim$bestmem)
@@ -884,14 +908,13 @@ All_results <- rbind(All_results,
 
                          
                          # Q-learning with last round states
-                         "QL_states_BIC" = QL_states_modelling[[id]]$value + 2*log(150),
+                         "QL_states_BIC" = QL_states_modelling[[id]]$optim$bestval + 2*log(150),
                          # beta ->  inverse temperature parameter in softmax choice function
-                         "QL_states_Beta" = QL_states_modelling[[id]]$par[1],
+                         "QL_states_Beta" = QL_states_modelling[[id]]$optim$bestmem[1],
                          # alpha -> learning rate in QL update
-                         "QL_states_alpha" = QL_states_modelling[[id]]$par[2],
+                         "QL_states_alpha" = QL_states_modelling[[id]]$optim$bestmem[2],
                          
                         
-
                          # Parametric EWA
                          # Parametric EWA BIC
                          "EWA_BIC" = EWA_modelling[[id]]$optim$bestval + 4*log(150),
@@ -940,7 +963,7 @@ for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   tot_score <- sum(tdat$score)
   tot_time <- sum(tdat$human_rt)
-  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
+  early_dat <- subset(tdat,between(tdat$round,2,11) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(All_results, ID == id)
   min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
@@ -951,23 +974,30 @@ for(id in unique(dat$human_id)) {
                        data.frame(
                          "id" = id,
                          "condition" = dat[dat$human_id==id,"condition"][1],
-                         "Total_time" = sum(tdat$human_rt),
-                         "BIC_diff_Bayes" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
-                         "BIC_diff_rand" =  id_results[,"Random_BIC"] - min_BIC,
                          "Early_game_score" = tr_score,
                          "Total_score" = tot_score,
-                         "Best_model" = best_model
+                         "Best_model" = best_model,
+                         "Total_time" = sum(tdat$human_rt),
+                         "TR_minus_NT_BIC" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
+                         "Rand_minus_best_BIC" =  id_results[,"Random_BIC"] - min_BIC
+
                        ))
 }
+```
 
 # Correlate difference between BICs of Bayes transfer and no transfer with early rounds score (evidence for transfer) 
-cor.test(Corr_Tr_model$BIC_diff_Bayes,Corr_Tr_model$Early_game_score, method=c("pearson", "kendall", "spearman"))
+```{r}
 
-# Correlation between early game score and difference between best model and random BIC
-cor.test(Corr_Tr_model$BIC_diff_rand, Corr_Tr_model$Early_game_score, method=c("pearson", "kendall", "spearman"))
+cor.test(Corr_Tr_model$TR_minus_NT_BIC,Corr_Tr_model$Early_game_score, method="spearman")
 
 ```
-# Notes : There is positive and stat significant correlation between the difference between the best model BIC and random BIC on one hand, and the early scores from the target games ( FWG and NUM). 
+
+#Correlation between early game score and difference between best model and random BIC
+```{r}
+cor.test(Corr_Tr_model$Rand_minus_best_BIC, Corr_Tr_model$Early_game_score, method="spearman")
+
+```
+# Notes : There is positive and stat significant correlation between the difference between the best model BIC and random BIC on one hand, and the early scores from the target games ( FWG and NUM). What does this mean? It can be interpreted as a validation of early game score as good measure of how non-random play is....
 
 
 ## Let's compare total scores of each participant by the model of best fit, see if Bayes+transfer total scores are higher than Bayes + no transfer  
@@ -980,37 +1010,48 @@ cor.test(Corr_Tr_model$BIC_diff_rand, Corr_Tr_model$Early_game_score, method=c("
 #           ylab = "Total Score", xlab = "Model with best fit")
 
 Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", .default = "Random")
-
 model <- factor(Corr_Tr_model$model)
+condition <- factor(Corr_Tr_model$condition)
+
 # Total score by best predictive model 
 tapply(Corr_Tr_model$Total_score, model, mean)
 
 # Compute the analysis of variance
-res.aov <- aov(Total_score ~ model, data = Corr_Tr_model)
+res.aov <- aov(Total_score ~ model + condition, data = Corr_Tr_model)
 # Summary of the analysis
 summary(res.aov)
 TukeyHSD(res.aov)
+```
 
 ## What if we remove from data people who play randomly and then compare Transfer v No Transfer? 
+```{r}
+
 Bayes_only <- subset(Corr_Tr_model, model != "Random" )
 
-Bayes.aov <- aov(Early_game_score ~ model, data = Bayes_only)
-# Summary of the analysis
-summary(Bayes.aov)
-TukeyHSD(Bayes.aov)
+group_by(Bayes_only, model) %>%
+  summarise(
+    count = n(),
+    mean = mean(Early_game_score, na.rm = TRUE),
+    sd = sd(Early_game_score, na.rm = TRUE)
+  )
 
-wilcox.test(Early_game_score ~ model,data = Bayes_only) 
-
+wilcox.test(Early_game_score ~ model, data = Bayes_only) 
+```
 
 # Total time by best predictive model
+```{r}
 tapply(Corr_Tr_model$Total_time, model, mean)
+
+
+wilcox.test(Early_game_score ~ model, data = Bayes_only) 
+
 time.aov <- aov(Total_time ~ model, data = Corr_Tr_model)
 # Summary of the analysis
 summary(time.aov)
 TukeyHSD(time.aov)
 
 ``` 
-#Scores are indeed higher but difference is not statistically significant. 
+#Early game scores for people best modelled with a Bayesian model with transfer are indeed higher than those best modelled without transfer but difference is not statistically significant. 
 
 ## What next?: Fitting models that explicitly take into account opponent strategy. LOLA? Won't work, it suffers from same issues as normal QL in that most states are not visited during game play. Influence model? Like belief lerning. it still has no sequential memory, still computes distribution on beliefs. We need to incorporate models that can mimic human memory by looking at history of play and leverage sequence prediction capabilities. 
 
