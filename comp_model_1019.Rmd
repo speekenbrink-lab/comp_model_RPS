@@ -26,6 +26,7 @@ dat <- read.csv("data20180719.csv")
 library(tidyr)
 library(dplyr)
 library(DEoptim)
+library(optimParallel)
 # library(ggpubr)
 # transform 'winner' variable in numeric score
 dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
@@ -358,6 +359,8 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer)
   #if(return_value == "likelihood_by_trial") return(lik_hum)
 }
 
+data = subset(dat,human_id == "38VxtUSv_h6RR5-tAAA2")
+naive_bayes(c(0.01,0.99),data,c("level0","level1","level2"),"-2loglik",FALSE)
 ```
 
 
@@ -369,9 +372,9 @@ for(id in unique(dat$human_id)) {
   TR_bayes_modelling[[id]] <- list()
   tdat <- subset(dat,human_id == id)
   
-  TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
+  # TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0,0), upper = c(1,1), data=tdat, opp_strategy_vec = c("level0","level1","level2") ,return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE, parallelType=1,parVar = c("best_response")))
 
-# TR_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  TR_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
 save(TR_bayes_modelling,file="TR_bayes_modelling.RData")
 
@@ -386,9 +389,9 @@ for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   
   
-  NT_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
+  # NT_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
 
-#   NT_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE ,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  NT_bayes_modelling[[id]] <- optim(c(0.1,0.1),fn=naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE ,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
 
 save(NT_bayes_modelling,file="NT_bayes_modelling.RData")
