@@ -26,8 +26,8 @@ dat <- read.csv("data20180719.csv")
 library(tidyr)
 library(dplyr)
 library(DEoptim)
-#library(optimParallel)
-# library(ggpubr)
+library(optimParallel)
+library(ggpubr)
 # transform 'winner' variable in numeric score
 dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
 # create a new variable 'block' with round 1...25 = block 1 and round 26...50 as block 2
@@ -420,10 +420,9 @@ Nbayes_par_results <- rbind(Nbayes_par_results,
 }
 
 #Plotting the theta/eps scatter for all participants...
-plot(Nbayes_par_results$theta,Nbayes_par_results$eps,xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
+plot(Nbayes_par_results$theta_transfer,Nbayes_par_results$eps_transfer, xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
 # 
-# write.csv(Nbayes_par_results,file="Nbayes_par_results.csv",row.names = FALSE)
-# kable(Nbayes_par_results)
+write.csv(Nbayes_par_results,file="Nbayes_par_results.csv",row.names = FALSE)
 ```
 
 
@@ -967,16 +966,17 @@ for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   tot_score <- sum(tdat$score)
   tot_time <- sum(tdat$human_rt)
-  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
+  early_dat <- subset(tdat,between(tdat$round,2,11) & (game =="fwg"))
+  #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(All_results, ID == id)
   min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
   
-  best_model <- c("random","Bayes Tr","Bayes No Tr","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
+  best_model <- c("random","Bayes Tr","Bayes NT","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
   # 
   Corr_Tr_model <- rbind(Corr_Tr_model ,
                        data.frame(
-                         "id" = id,
+                         "human_id" = id,
                          "condition" = dat[dat$human_id==id,"condition"][1],
                          "Early_game_score" = tr_score,
                          "Total_score" = tot_score,
@@ -1012,12 +1012,12 @@ barplot(table(Corr_Tr_model$Best_model))
 
 ```{r}
 
-# ggboxplot(Corr_Tr_model, x = "model", y = "Total_score", 
+# ggboxplot(Corr_Tr_model, x = "model", y = "Total_score",
 #           color = "model", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
 #           order = c("Random", "No Transfer", "Transfer"),
 #           ylab = "Total Score", xlab = "Model with best fit")
 
-Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", .default = "Random")
+Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", "QL_states" = "Q_Learning",  .default = "Random")
 model <- factor(Corr_Tr_model$model)
 condition <- factor(Corr_Tr_model$condition)
 
@@ -1034,24 +1034,23 @@ TukeyHSD(res.aov)
 ## What if we remove from data people who play randomly and then compare Transfer v No Transfer? 
 ```{r}
 
-Bayes_only <- subset(Corr_Tr_model, model != "Random" )
+Non_Random_Only <- subset(Corr_Tr_model, model != "Random" )
 
-group_by(Bayes_only, model) %>%
+group_by(Non_Random_Only, model) %>%
   summarise(
     count = n(),
     mean = mean(Early_game_score, na.rm = TRUE),
     sd = sd(Early_game_score, na.rm = TRUE)
   )
 
-wilcox.test(Early_game_score ~ model, data = Bayes_only) 
+res2 <- aov(Early_game_score ~ model, data = Non_Random_Only) 
+summary(res2)
+TukeyHSD(res2)
 ```
 
 # Total time by best predictive model
 ```{r}
 tapply(Corr_Tr_model$Total_time, model, mean)
-
-
-wilcox.test(Early_game_score ~ model, data = Bayes_only) 
 
 time.aov <- aov(Total_time ~ model, data = Corr_Tr_model)
 # Summary of the analysis

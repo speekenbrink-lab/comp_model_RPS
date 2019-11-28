@@ -1,0 +1,17 @@
+\documentclass{article}
+
+\usepackage{Sweave}
+\begin{document}
+\input{pdf_test_sweave-concordance}
+
+This is a table of early game scores 
+
+group_by(Non_Random_Only, model) %>%
+  summarise(
+    count = n(),
+    mean = mean(Early_game_score, na.rm = TRUE),
+    sd = sd(Early_game_score, na.rm = TRUE)
+  )
+
+
+\end{document}
