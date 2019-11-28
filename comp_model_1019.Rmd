@@ -26,7 +26,7 @@ dat <- read.csv("data20180719.csv")
 library(tidyr)
 library(dplyr)
 library(DEoptim)
-library(optimParallel)
+#library(optimParallel)
 # library(ggpubr)
 # transform 'winner' variable in numeric score
 dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
@@ -203,7 +203,6 @@ my_logistic <- function(x) {
 
 
 ## Fixed level-k type: Likelihood of the different models by trial
-
 This plot ks based on the three parameter versions of each strategy, and shows the average probability according to each model of participants' choices. It can be seen that, compared to the RPS game, where the fit grows slowly over trials, the fit in the later games increases much more rapidly.
 
 ```{r}
@@ -234,19 +233,11 @@ This plot ks based on the three parameter versions of each strategy, and shows t
 ```
 
 
-
-
-
-
-
-
 #### New work 
 
 
 ## Fitting simple Bayesian learning model with flat prior
-```{r}
 
-```
 
 #Fit a bayesian model to observed human play. Prior is vector of possible level-k opponent strategies.
 ```{r}
@@ -270,15 +261,15 @@ best_response <- function(game,ai_action){
 }
 
 naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer) {
-  # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
-  # Epsilone: parameter controlling noise in human choice. Probability human will deviate from its best response. In [0,1].
+  
   # dat = data subset for one participant
   # opp_strategy_vec = vector of possible opponent strtegies, model assumes humans restrict opp strategy space to vector   c("level0","level1","level2")
   # return = -2logLik 
   # or "likelihood_by_trial" vector  (for later plotting, etc)
   # opp_mod_transfer is a boolean. True if distribution of opponent strategies is kept across games. False otherwise. 
   
-  #return_value <- match.arg(return_value)
+  # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
+  # eps: parameter controlling noise in human choice. Probability human will DEVIATE from its best response. In [0,1].
   theta <- par[1]
   eps <- par[2]
   
@@ -308,6 +299,7 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer)
       # first round is uniform prediction
       pred_opp <- NA
       lik_hum[t] <- 1/nopts
+      ## KEY CODE FOR LEARNING TRANSFER !! (if no OM transferreset prior to uniform)
       if (!(opp_mod_transfer)) {
         opp_prior_vec <- rep(1/num_strat, num_strat)
         lik_opp[,t] <- opp_prior_vec
@@ -318,7 +310,7 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer)
       # get prediction of opponent action from CSV files
       for (strategy in opp_strategy_vec) {
         k = match(strategy,opp_strategy_vec)
-        pred_opp <- as.character(filter(pred_file_opp, pred_file_opp$human_previous == as.character(data[t-1,"h_action"]) & pred_file_opp$computer_previous == as.character(data[t-1,"a_action"]))[[k]])
+        pred_opp <- as.character(filter(pred_file_opp, pred_file_opp$human_previous == as.character(data[t-1,"h_action"]) & pred_file_opp$computer_previous == as.character(data[t-1,"a_action"]))[[strategy]])
         
         # Given opponent action predicted, what would be human action best response for each opp strat
         br_hum[[k]] <- best_response(t_game,as.character(pred_opp))
@@ -346,7 +338,7 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer)
       opp_prior_vec <- lik_opp[,t]
     }
     # for debugging uncomment the line below
-    #cat(as.character(pred_opp),as.character(data[t,"h_action"]),lik[,t],"\n")
+    #cat(as.character(pred_opp),as.character(data[t,"a_action"]),lik_opp[,t],"\n")
   }
   if(return_value == "-2loglik") {
     ret <- -2*sum(log(lik_hum))
@@ -356,17 +348,26 @@ naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer)
       return(ret)
     }
   }
-  #if(return_value == "likelihood_by_trial") return(lik_hum)
+  if(return_value == "likelihood_by_trial") return(lik_hum)
 }
 
-data = subset(dat,human_id == "38VxtUSv_h6RR5-tAAA2")
-naive_bayes(c(0.01,0.99),data,c("level0","level1","level2"),"-2loglik",FALSE)
+# data = subset(dat,human_id == "38VxtUSv_h6RR5-tAAA2")
+# naive_bayes(c(0.9,0.99),data,c("level0","level1","level2"),"-2loglik",FALSE)
+```
+
+```{r}
+rps_predict_opp <- read.csv("rps_predict_opp.csv")
+red_opp <- filter(rps_predict_opp, rps_predict_opp$human_previous == "R" & rps_predict_opp$computer_previous == "S")
+
+as.character(red_opp[["level0"]])
 ```
 
 
-```{r}
 
 # Fitting a bayesiam model WITH TRANSFER of opp strat distribution between games 
+```{r}
+
+
 TR_bayes_modelling <- list()
 for(id in unique(dat$human_id)) {
   TR_bayes_modelling[[id]] <- list()
@@ -418,8 +419,8 @@ Nbayes_par_results <- rbind(Nbayes_par_results,
                          "eps_no_transfer" = NT_bayes_modelling[[id]]$par[2]))
 }
 
-# Plotting the theta/eps scatter for all participants...
-# plot(Nbayes_par_results$theta,Nbayes_par_results$eps,xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
+#Plotting the theta/eps scatter for all participants...
+plot(Nbayes_par_results$theta,Nbayes_par_results$eps,xlab="Theta", ylab= "Epsilone",col = ifelse(as.character(Nbayes_par_results$condition) == "Level2",'red','green'))
 # 
 # write.csv(Nbayes_par_results,file="Nbayes_par_results.csv",row.names = FALSE)
 # kable(Nbayes_par_results)
@@ -966,7 +967,7 @@ for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   tot_score <- sum(tdat$score)
   tot_time <- sum(tdat$human_rt)
-  early_dat <- subset(tdat,between(tdat$round,2,11) & (game =="fwg" | game =="numbers") )
+  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(All_results, ID == id)
   min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
@@ -999,6 +1000,10 @@ cor.test(Corr_Tr_model$TR_minus_NT_BIC,Corr_Tr_model$Early_game_score, method="s
 ```{r}
 cor.test(Corr_Tr_model$Rand_minus_best_BIC, Corr_Tr_model$Early_game_score, method="spearman")
 
+```
+# Histogram of best fitting models 
+```{r}
+barplot(table(Corr_Tr_model$Best_model))
 ```
 # Notes : There is positive and stat significant correlation between the difference between the best model BIC and random BIC on one hand, and the early scores from the target games ( FWG and NUM). What does this mean? It can be interpreted as a validation of early game score as good measure of how non-random play is....
 

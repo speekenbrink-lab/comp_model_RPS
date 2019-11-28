@@ -424,9 +424,8 @@ for(lambda in lambdas) {
   
   optim_QL_states <- DEoptim(fn = Q_learn_states,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE,parallelType=1))
   
-  
-  
-  optim_NB     <- optim(c(0.1,0.1),fn = naive_bayes, gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", lower = c(0.01,0.01), upper = c(0.99,0.99), method ="L-BFGS-B")
+
+  optim_NB     <- optim(c(0.1,0.1),fn=naive_bayes, gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
   
   # Get condition
   EWA_self_simulation[count, "condition"]  <- as.character(tdat$condition[1])
