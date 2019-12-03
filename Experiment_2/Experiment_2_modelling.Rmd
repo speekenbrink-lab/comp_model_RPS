@@ -5,24 +5,225 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
-## R Markdown
+```{r}
+library(tidyr)
+library(dplyr)
+library(DEoptim)
+library(optimParallel)
+library(ggpubr)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# dat_exp2 <- read.csv("MyData.csv")
+# 
+# # transform 'winner' variable in numeric score
+# dat_exp2$score <- recode(dat_exp2$winner, human = 1, tie = 0, AI = -1)
+# 
+# # Create a new variable stage.f as a factor for the stages 1,2 ,3 4 in game
+# dat_exp2$stage.f <- factor(dat_exp2$stage, labels = c("Stage 1","Stage 2","Stage 3", "Stage 4"),levels=c(1,2,3,4))
+# 
+# # create a new variable "game.f" as a factor variable of games
+# dat_exp2$game.f <- factor(dat_exp2$game, labels = c("RPS","FWG","SHOOT"),levels=c("rps","fwg","shootout"))
+# 
+# # recode actions to make them equal to the codes in these files
+# dat_exp2$h_action <- recode(dat_exp2$human_action,"rock" = "R", "paper" = "P", "scissors" = "S", "fire" = "F", "water" = "W", "grass" = "G")
+# dat_exp2$a_action <- recode(dat_exp2$ai_action,"rock" = "R", "paper" = "P", "scissors" = "S", "fire" = "F", "water" = "W", "grass" = "G")
+# 
+# write.csv(dat_exp2, row.names=FALSE,file="data_exp2.csv")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
+```{r}
+# Read in cleaned data file
+dat_exp2 <- read.csv("data_exp2.csv")
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Function to produce best reponse to ai_action in exp2
+exp2_best_response <- function(game,ai_action){
+  if (game == "rps"){
+    if (ai_action == "R") {return("P")}
+    else if (ai_action == "P") {return("S")}
+    else if (ai_action == "S") {return("R")}
+    
+  } else if (game == "fwg"){ 
+    if (ai_action == "F") {return("W")}
+    else if (ai_action == "W") {return("G")}
+    else if (ai_action == "G") {return("F")}
+    
+  } else if (game == "shootout") {
+    if (ai_action == "left") {return("center/right")}
+    else if (ai_action == "center") {return("left/right")}
+    else if (ai_action == "right") {return("left/center")}
+    else if (ai_action == "left/right") {return("center")}
+    else if (ai_action == "left/center") {return("right")}
+    else if (ai_action == "center/right") {return("left")}
+  }
+}
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+
+exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer) {
+  
+  # dat = data subset for one participant
+  # opp_strategy_vec = vector of possible opponent strtegies, model assumes humans restrict opp strategy space to vector   c("level0","level1","level2")
+  # return = -2logLik 
+  # or "likelihood_by_trial" vector  (for later plotting, etc)
+  # opp_mod_transfer is a boolean. True if distribution of opponent strategies is kept across games. False otherwise. 
+  
+  # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
+  # eps: parameter controlling noise in human choice. Probability human will DEVIATE from its best response. In [0,1].
+  theta <- par[1]
+  eps <- par[2]
+  
+  num_strat = length(opp_strategy_vec) 
+  
+  # Load tables predicting oppponent movel
+  
+  rps_predict_opp <- read.csv("rps_predict_opp.csv")
+  fwg_predict_opp <- read.csv("fwg_predict_opp.csv")
+  shootout_predict_opp <- read.csv("shootout_predict_opp.csv")
+  
+
+  #lik_opp is a vector that holds and update probability distribution of opp strategy given actions.
+  lik_opp <- matrix(0.0,num_strat, nrow(data))
+  # Initiate prior vector as uniform
+  opp_prior_vec <-rep(1/num_strat, num_strat)
+  
+  lik_hum <- matrix(0.0,nrow(data))
+  # br_hum is vector that stores best responses of human to actions taken by each level-k ai opponent at the round.
+  br_hum <- rep(NA,num_strat)
+
+  
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    pred_file_opp <- switch(as.character(t_game),rps = rps_predict_opp,fwg = fwg_predict_opp, shootout = shootout_predict_opp)
+    nopts <- 3
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      pred_opp <- NA
+      lik_hum[t] <- 1/nopts
+      
+      ## KEY CODE FOR LEARNING TRANSFER !! (if no OM transfer reset prior to uniform)#####
+      if (!(opp_mod_transfer) || data[t,"stage"] == 1) {
+        opp_prior_vec <- rep(1/num_strat, num_strat)
+        
+      # we are round 1 of stage 2, keep opp vector from round 20 of stage 1  for stage 3
+      } else if (data[t,"stage"] == 2) { 
+        opp1_prior <- opp_prior_vec
+        opp_prior_vec <- rep(1/num_strat, num_strat)
+      
+      # we are round 1 of stage 3, keep opp vector from round 20 of stage 2  for stage 4
+      } else if (data[t,"stage"] == 3) { 
+        opp2_prior <- opp_prior_vec
+        opp_prior_vec <- opp1_prior
+      
+      # We are in round 1 of stage 4, use vector of priors from stage 2
+      }  else if (data[t,"stage"] == 4){ 
+        opp_prior_vec <- opp2_prior
+      }
+      
+      
+    # Rounds 2 to End of stage
+    } else {
+      # get prediction of opponent action from CSV files
+      for (strategy in opp_strategy_vec) {
+        k = match(strategy,opp_strategy_vec)
+        pred_opp <- as.character(filter(pred_file_opp, pred_file_opp$human_previous == as.character(data[t-1,"h_action"]) & pred_file_opp$computer_previous == as.character(data[t-1,"a_action"]))[[strategy]])
+        
+        # Given opponent action predicted, what would be human action best response for each opp strat
+        br_hum[[k]] <- exp2_best_response(t_game,as.character(pred_opp))
+        
+        # First we deal with easy case of unique predicted action ( multiple possible preds in shoot are separated by "/" sign)
+        if (!grepl("/",pred_opp,fixed = TRUE)) {
+           # Multiply prior by likelihood of observation to get posterior. Done here ot take advantage of For loop. 
+          if(as.character(data[t,"a_action"]) == pred_opp) {
+            lik_opp[k,t] <- (theta + (1-theta)/nopts)*opp_prior_vec[k]
+          } else {
+            lik_opp[k,t] <- ((1-theta)/nopts)*opp_prior_vec[k]
+          }
+        # Here we are in shootout and opponent predicted action is a vector of two possible moves (e.g "left/center")  
+        } else {
+          if(grepl(as.character(data[t,"a_action"]), pred_opp,fixed = TRUE)) {
+            # Assume each action has likelihood of 50%
+             lik_opp[k,t] <- 0.5*(theta + (1-theta)/nopts)*opp_prior_vec[k]
+          } else {
+            #the 2 is to standardise the theta dependent probs: P(ai plays pred | opp is level k)
+            lik_opp[k,t] <- 2*((1-theta)/nopts)*opp_prior_vec[k]
+          }
+        }
+        
+      # Get which opponent strategy human current actn maps to (if index = 0 then human current action is br to level-0 comp_strat...)
+      indices <- which(grepl(as.character(data[t,"h_action"]),br_hum,fixed = TRUE))
+
+      # THEN likelihood of current human action is just prior on opponent vec (haven't updated priors with curr opp act yet)
+      # if action is not predicted by any level-k OM, assume human chooses randomly with prob eps
+      if(length(indices) == 0){
+        lik_hum[t] <- eps/nopts
+      # if same br action for multiple possible ai opponents, add probabilities 
+      } else {
+        lik_hum[t] <- sum(opp_prior_vec[indices])*(1-eps) + eps/nopts
+      }
+    }  
+      # Standardising the probabilities and updating prior
+      lik_opp[,t] <- lik_opp[,t]/sum(lik_opp[,t])
+      opp_prior_vec <- lik_opp[,t]
+    }
+  # for debugging uncomment the line below
+  #cat(as.character(pred_opp),as.character(data[t,"a_action"]),lik_opp[,t],"\n")
+  }
+  
+  if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret) || is.nan(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+  
+}
+
+```
+
+```{r}
+
+test_data = subset(dat_exp2,human_id == "bZg1T3MNoItL6b7qAAAj")
+exp2_naive_bayes(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik",TRUE)
+```
+
+```{r}
+exp2_TR_bayes <- list()
+for(id in unique(dat_exp2$human_id)) {
+  exp2_TR_bayes[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
+  
+  # TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0,0), upper = c(1,1), data=tdat, opp_strategy_vec = c("level0","level1","level2") ,return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE, parallelType=1,parVar = c("best_response")))
+
+  exp2_TR_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+}
+save(exp2_TR_bayes, file="exp2_TR_bayes.RData")
+
+```
+
+
+```{r}
+
+exp2_NT_bayes <- list()
+for(id in unique(dat_exp2$human_id)) {
+  exp2_NT_bayes[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
+  
+  # exp2_NT_bayes[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
+
+  exp2_NT_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+}
+
+save(exp2_NT_bayes,file="exp2_NT_bayes.RData")
+```
+
+```{r}
+cat("job done")
+```

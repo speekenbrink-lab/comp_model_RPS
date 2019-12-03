@@ -1,0 +1,10 @@
+human_previous,computer_previous,level0,level1,level2
+left,left,left,left,center/right
+left,center,center,left,left/right
+left,right,right,left,left/center
+center,left,left,center,center/right
+center,center,center,center,left/right
+center,right,right,center,left/center
+right,left,left,right,center/right
+right,center,center,right,left/right
+right,right,right,right,left/center

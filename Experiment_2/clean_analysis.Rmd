@@ -48,7 +48,7 @@ dat_score$avg_bonus <- floor(dat_score$overall_score)*0.02
 write.csv(dat_score,row.names=FALSE,file="bonus_payment.csv")
 
 #Average bonus per participant 
-bonus_to_be_paid <- mean(dat_score$avg_bonus)
+#bonus_to_be_paid <- mean(dat_score$avg_bonus)
 
 # check num level 1 and level 2 facing players
 group_by(dat_score, condition) %>%
