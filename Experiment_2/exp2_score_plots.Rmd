@@ -7,6 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(dplyr)
+library(ggpubr)
 ```
 
 ```{r}
@@ -58,6 +59,7 @@ ggplot(data = exp2_cum_score, aes(x = t, y=acc_sum, group = part_num)) +
 
 
 ```{r}
+
 temp <- exp2_cum_score[,c("t","acc_sum","Best_model","condition","part_num")]
 dat_by_model <- temp %>% group_by(Best_model,t) %>% 
   summarize(model_acc_sum = mean(acc_sum))
