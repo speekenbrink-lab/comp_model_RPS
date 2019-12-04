@@ -52,7 +52,8 @@ exp2_cum_score <- merge(exp2_cum_score, model_comp[, c("human_id", "Best_model")
 
 ```{r}
 ggplot(data = exp2_cum_score, aes(x = t, y=acc_sum, group = part_num)) + 
-  geom_line(aes(color= Best_model))
+  geom_line(aes(color= Best_model)) +
+  scale_x_continuous(minor_breaks = seq(0 , 180, 10), breaks = seq(0, 180, 60))
 ```
 
 
