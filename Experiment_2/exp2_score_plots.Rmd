@@ -1,0 +1,67 @@
+---
+title: "Cumulative Score Plots Experiment 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+```
+
+```{r}
+
+dat_exp2 = read.csv("data_exp2.csv")
+
+#Adjust shootout score tor eflect easier game
+dat_exp2$adj_score <- ifelse(as.character(dat_exp2$game) == "shootout", dat_exp2$score - 0.333, dat_exp2$score)
+
+# Load data comparing models BIC for each participant 
+model_comp = read.csv("exp2_model_comp.csv")
+```
+
+```{r}
+datalist2 = list()
+i = 0
+
+#Build empty datafrsme with same names as original data
+exp2_cum_score <- setNames(data.frame(matrix(ncol = ncol(dat_exp2), nrow = 0)), colnames(dat_exp2))
+for(id in unique(dat_exp2$human_id)) {
+  i <- i+1
+  tdat <- subset(dat_exp2,human_id == id)
+  tdat$part_num <- i
+  # NB : USE ADJUSTED SCORE IN SHOOTOUT
+  tdat <- within(tdat, acc_sum <- cumsum(tdat$adj_score))
+  datalist2[[i]] <- tdat
+}
+
+# Merge all datasets into one 
+exp2_cum_score <- dplyr::bind_rows(datalist2)
+# or exp2_cum_score <- data.table::rbindlist(datalist)
+
+# Add column for time t
+exp2_cum_score <- exp2_cum_score %>% group_by(human_id) %>% mutate(t = row_number())
+
+# Participant number as a factor 
+# tdat$part_num <- as.factor(tdat$part_num)
+
+# Add best fitting model per participant
+exp2_cum_score <- merge(exp2_cum_score, model_comp[, c("human_id", "Best_model")], by="human_id")
+```
+
+
+```{r}
+ggplot(data = exp2_cum_score, aes(x = t, y=acc_sum, group = part_num)) + 
+  geom_line(aes(color= Best_model))
+```
+
+
+```{r}
+temp <- exp2_cum_score[,c("t","acc_sum","Best_model","condition","part_num")]
+dat_by_model <- temp %>% group_by(Best_model,t) %>% 
+  summarize(model_acc_sum = mean(acc_sum))
+
+ggplot(data = dat_by_model, aes(x = t, y=model_acc_sum, group = Best_model)) + 
+   geom_line(aes(color= Best_model)) +
+  scale_x_continuous(minor_breaks = seq(0 , 180, 10), breaks = seq(0, 180, 60))
+```

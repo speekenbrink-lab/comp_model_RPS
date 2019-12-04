@@ -28,10 +28,7 @@ library(dplyr)
 library(DEoptim)
 library(optimParallel)
 library(ggpubr)
-# transform 'winner' variable in numeric score
-dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
-# create a new variable 'block' with round 1...25 = block 1 and round 26...50 as block 2
-dat$block <- as.numeric(cut(dat$round,2))
+
 # create a new data.frame in a 'wide format'
 # widedata <- dat %>%
 #   unite(game_block,game,block) %>% # this creates a new variable which combines game and block
@@ -51,9 +48,16 @@ rps_predict_opp <- read.csv("rps_predict_opp.csv")
 fwg_predict_opp <- read.csv("fwg_predict_opp.csv")
 numbers_predict_opp <- read.csv("numbers_predict_opp.csv")
 
+# transform 'winner' variable in numeric score
+dat$score <- recode(dat$winner, human = 1, tie = 0, ai = -1)
+# create a new variable 'block' with round 1...25 = block 1 and round 26...50 as block 2
+dat$block <- as.numeric(cut(dat$round,2))
+
 # recode actions to make them equal to the codes in these files
 dat$h_action <- recode(dat$human_action,"rock" = "R", "paper" = "P", "scissors" = "S", "fire" = "F", "water" = "W", "grass" = "G", "one" = "1", "two" = "2", "three" = "3", "four" = "4", "five" = "5")
 dat$a_action <- recode(dat$ai_action,"rock" = "R", "paper" = "P", "scissors" = "S", "fire" = "F", "water" = "W", "grass" = "G", "one" = "1", "two" = "2", "three" = "3", "four" = "4", "five" = "5")
+
+write.csv(dat,file = "exp1_data.csv", row.names = FALSE)
 
 # logit tranformation
 my_logit <- function(x) {
@@ -882,6 +886,14 @@ save(EWA_self_modelling,file="EWA_self_modelling.RData")
 
 ## Putting results together 
 ```{r}
+load("TR_bayes_modelling.RData")
+load("NT_bayes_modelling.RData")
+load("QL_modelling.RData")
+load("QL_states_modelling.RData")
+load("EWA_modelling.RData")
+load("EWA_self_modelling.RData")
+
+
 All_results <- data.frame()
 for(id in unique(dat$human_id)) {
 All_results <- rbind(All_results,
@@ -960,8 +972,12 @@ Table_results <- table(All_results[, "condition"],c("random","Bayes Tr","Bayes N
  
 ## Question: Can we see evidence for transfer by looking at difference in BICS btwn Bayes with and without transfer. Let's test correlation between difference in BICs  with early rounds score (evidence for transfer) 
 ```{r}
+# id_results_tst <- subset(All_results, ID == "38VxtUSv_h6RR5-tAAA2")
+```
 
-Corr_Tr_model <- data.frame()
+```{r}
+
+exp1_model_comp <- data.frame()
 for(id in unique(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
   tot_score <- sum(tdat$score)
@@ -974,7 +990,7 @@ for(id in unique(dat$human_id)) {
   
   best_model <- c("random","Bayes Tr","Bayes NT","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
   # 
-  Corr_Tr_model <- rbind(Corr_Tr_model ,
+  exp1_model_comp <- rbind(exp1_model_comp,
                        data.frame(
                          "human_id" = id,
                          "condition" = dat[dat$human_id==id,"condition"][1],
@@ -987,23 +1003,26 @@ for(id in unique(dat$human_id)) {
 
                        ))
 }
+
+write.csv(exp1_model_comp,file = "exp1_model_comp.csv", row.names = FALSE)
+
 ```
 
 # Correlate difference between BICs of Bayes transfer and no transfer with early rounds score (evidence for transfer) 
 ```{r}
 
-cor.test(Corr_Tr_model$TR_minus_NT_BIC,Corr_Tr_model$Early_game_score, method="spearman")
+cor.test(exp1_model_comp$TR_minus_NT_BIC,exp1_model_comp$Early_game_score, method="spearman")
 
 ```
 
 #Correlation between early game score and difference between best model and random BIC
 ```{r}
-cor.test(Corr_Tr_model$Rand_minus_best_BIC, Corr_Tr_model$Early_game_score, method="spearman")
+cor.test(exp1_model_comp$Rand_minus_best_BIC, exp1_model_comp$Early_game_score, method="spearman")
 
 ```
 # Histogram of best fitting models 
 ```{r}
-barplot(table(Corr_Tr_model$Best_model))
+barplot(table(exp1_model_comp$Best_model))
 ```
 # Notes : There is positive and stat significant correlation between the difference between the best model BIC and random BIC on one hand, and the early scores from the target games ( FWG and NUM). What does this mean? It can be interpreted as a validation of early game score as good measure of how non-random play is....
 
@@ -1012,20 +1031,20 @@ barplot(table(Corr_Tr_model$Best_model))
 
 ```{r}
 
-# ggboxplot(Corr_Tr_model, x = "model", y = "Total_score",
+# ggboxplot(exp1_model_comp, x = "model", y = "Total_score",
 #           color = "model", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
 #           order = c("Random", "No Transfer", "Transfer"),
 #           ylab = "Total Score", xlab = "Model with best fit")
 
-Corr_Tr_model$model <- recode(Corr_Tr_model$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", "QL_states" = "Q_Learning",  .default = "Random")
-model <- factor(Corr_Tr_model$model)
-condition <- factor(Corr_Tr_model$condition)
+exp1_model_comp$model <- recode(exp1_model_comp$Best_model,"Bayes Tr" = "Tranfer","Bayes No Tr" = "No Transfer", "QL_states" = "Q_Learning",  .default = "Random")
+model <- factor(exp1_model_comp$model)
+condition <- factor(exp1_model_comp$condition)
 
 # Total score by best predictive model 
-tapply(Corr_Tr_model$Total_score, model, mean)
+tapply(exp1_model_comp$Total_score, model, mean)
 
 # Compute the analysis of variance
-res.aov <- aov(Total_score ~ model + condition, data = Corr_Tr_model)
+res.aov <- aov(Total_score ~ model + condition, data = exp1_model_comp)
 # Summary of the analysis
 summary(res.aov)
 TukeyHSD(res.aov)
@@ -1034,7 +1053,7 @@ TukeyHSD(res.aov)
 ## What if we remove from data people who play randomly and then compare Transfer v No Transfer? 
 ```{r}
 
-Non_Random_Only <- subset(Corr_Tr_model, model != "Random" )
+Non_Random_Only <- subset(exp1_model_comp, model != "Random" )
 
 group_by(Non_Random_Only, model) %>%
   summarise(
@@ -1050,9 +1069,9 @@ TukeyHSD(res2)
 
 # Total time by best predictive model
 ```{r}
-tapply(Corr_Tr_model$Total_time, model, mean)
+tapply(exp1_model_comp$Total_time, model, mean)
 
-time.aov <- aov(Total_time ~ model, data = Corr_Tr_model)
+time.aov <- aov(Total_time ~ model, data = exp1_model_comp)
 # Summary of the analysis
 summary(time.aov)
 TukeyHSD(time.aov)

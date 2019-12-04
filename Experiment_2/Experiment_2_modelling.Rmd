@@ -193,7 +193,7 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_tran
 test_data = subset(dat_exp2,human_id == "bZg1T3MNoItL6b7qAAAj")
 exp2_naive_bayes(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik",TRUE)
 ```
-
+## Fitting Bayesian model with transfer  
 ```{r}
 exp2_TR_bayes <- list()
 for(id in unique(dat_exp2$human_id)) {
@@ -208,7 +208,7 @@ save(exp2_TR_bayes, file="exp2_TR_bayes.RData")
 
 ```
 
-
+## Fitting Bayesian model with NO trnsfer 
 ```{r}
 
 exp2_NT_bayes <- list()
@@ -224,6 +224,375 @@ for(id in unique(dat_exp2$human_id)) {
 save(exp2_NT_bayes,file="exp2_NT_bayes.RData")
 ```
 
+
+## Fitting Q_learning with state space of possible last round plays 
 ```{r}
-cat("job done")
+exp2_QL_states <- function(par,data,return_value,gamma){
+  # Par[1] -> beta= inverse temperature parameter in softmax choice function
+  # Par[2] -> lambda = learning rate (one per game?)
+  # data : participant and ai choice data.
+  # return_value=c("-2loglik","likelihood_by_trial")
+  # Gamma is discount factor for future rewards 
+  # Returns Q-values per trial and predicts choice using softmax
+  beta <- par[1]
+  alpha <- par[2]
+
+  #gamma <- 0.9 
+
+  #Define matrix of state spaces for each game 
+  G1 <- expand.grid(c("R", "P", "S"),c("R", "P", "S"))
+  states_RPS <- paste0(G1$Var1,G1$Var2)
+
+  G2 <- expand.grid(c("F", "W", "G"), c("F", "W", "G"))
+  states_FWG <- paste0(G2$Var1,G2$Var2)
+
+  G3 <- expand.grid(c("left","center","right"), c("left","center","right"))
+  states_SHOOT <- paste0(G3$Var1,G3$Var2)
+  
+  Q_vals_RPS = matrix(-0.5,9,3)
+  dimnames(Q_vals_RPS) = list(states_RPS, c("R", "P", "S"))
+
+  Q_vals_FWG = matrix(-0.5,9,3)
+  dimnames(Q_vals_FWG) = list(states_FWG, c("F", "W", "G"))
+  
+  Q_vals_SHOOT = matrix(-0.5,9,3)
+  dimnames(Q_vals_SHOOT) = list(states_SHOOT, c("left","center","right"))
+ 
+  lik_hum <- matrix(0.0,nrow(data))
+
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    nopts <- 3
+    
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, shootout = Q_vals_SHOOT)
+      state_vec <- switch(as.character(t_game),rps=states_RPS,fwg = states_FWG, shootout = states_SHOOT)
+      lik_hum[t] <- 1/nopts
+      # Randomly select state and previous actions for first round
+      curr_state <- sample(state_vec, size = 1)
+      h_act <- sample(colnames(Q_vals), size =1)
+      ai_act <- sample(colnames(Q_vals), size =1)
+      reward <- 0 
+      
+    } else {
+      # Get past human action and associated reward 
+      h_act <- as.character(data[t-1,"h_action"])
+      ai_act <- as.character(data[t-1,"a_action"])
+      reward <- as.numeric(data[t-1,"score"])
+    }
+    
+    
+    # cat(curr_state, " This is the previous state", "\n")
+    new_state <- paste0(h_act,ai_act)
+    # cat(new_state,"This is new state","\n")
+    
+    # Q_learning: update rule (time  = t-1)
+    Q_vals[curr_state, h_act] <- Q_vals[curr_state, h_act] + alpha*( reward + gamma*max(Q_vals[new_state,]) - Q_vals[curr_state, h_act])
+    
+    # Assume human chooses action probabilistically using softmax on Q values
+    probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
+    if (data[t,"round"] == 20) { cat(probs,"\n") }
+    
+    # Get actual human action and compute likelihood
+    h_act <- as.character(data[t,"h_action"])
+    act_index <- match(h_act, colnames(Q_vals))
+    lik_hum[t] <- probs[[act_index]]
+      
+    # Update state
+    curr_state <- new_state 
+    #}
+  }
+  if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret) || is.nan(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+  
+}
+
+
+
 ```
+
+```{r}
+exp2_QL_states(c(5,0.4),test_data, "-2loglik", 0.0)
+```
+
+```{r}
+exp2_QLS_modelling <- list()
+for(id in unique(dat_exp2$human_id)) {
+  exp2_QLS_modelling[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
+  # QL_states_modelling[[id]] <- optim(c(1,0.1),fn=Q_learn_states,gr = NULL, data=tdat,"-2loglik", gamma =0 , lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+
+   exp2_QLS_modelling[[id]] <- DEoptim(fn=exp2_QL_states,lower = c(0,0), upper = c(20,1), data=tdat,"-2loglik", gamma = 0, control=list(trace = FALSE, parallelType=1))
+}
+
+save(exp2_QLS_modelling, file="exp2_QLS_modelling.RData")
+```
+
+```{r}
+exp2_EWA_self <- function(par,data,return_value){
+
+  lambda <- par[1]
+  # Initiate N(0) = 1 as in Camerer and Ho 1997 paper. 
+
+  
+  # Define attraction vectors for each game 
+  A_RPS = matrix(0.0,3)
+  names(A_RPS) <- c("R","P","S")
+  A_FWG = matrix(0.0,3)
+  names(A_FWG) <- c("F","W","G")
+  A_SHOOT = matrix(0.0,3)
+  names(A_SHOOT) <- c("left","center","right")
+  
+  # # Define reward matrices from the prospective of the row player (human in our case)
+  reward_RPS <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_RPS) = list(c("R", "P", "S"), c("R", "P", "S"))
+  
+  reward_FWG <- t(matrix(c(0,-1,1,1,0,-1,-1,1,0),nrow=3,ncol=3))
+  dimnames(reward_FWG) = list(c("F", "W", "G"), c("F", "W", "G"))
+  
+  reward_SHOOT <- t(matrix(c(-1,1,1,1,-1,1,1,1,-1),nrow=3, ncol=3))
+  dimnames(reward_SHOOT) = list(c("left","center","right"), c("left","center","right"))
+  
+  # Initiate likelihood by trial vector 
+  lik_hum <- matrix(0.0,nrow(data))
+
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    nopts <- 3
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      Att <- switch(as.character(t_game), rps=A_RPS, fwg = A_FWG, shootout = A_SHOOT)
+      reward <- switch(as.character(t_game), rps=reward_RPS, fwg = reward_FWG, shootout = reward_SHOOT)
+      game_data <- subset(data, game == t_game)
+      lik_hum[t] <- 1/nopts
+      N <- 1.0
+
+      R_t <- rep(0.0,nopts)
+      H_t <- R_t
+      
+    } else {
+      
+      indx <- data[t,"round"]
+      # Get reward and past human action
+      h_act_prev <- as.character(game_data[indx-1,"h_action"])
+      a_act_prev <- as.character(game_data[indx-1,"a_action"])
+
+      # Estimate phi(t)
+      R_t <- as.numeric(names(Att) == a_act_prev)
+      # cat("This is R(t)",R_t,"\n")
+      
+      H_t <- (H_t*(indx-2) + R_t)/(indx-1)
+      # cat("this is H(t)",H_t,"\n")
+      
+      Phi_t <- 1 - 0.5*sum((H_t-R_t)^2)
+      # cat("This is Phit(t)",Phi_t,"\t")
+      
+      # Estimate vector Delta(t)
+
+      delta_t <- as.numeric(reward[,a_act_prev] >= as.numeric(game_data[indx-1,"score"]))
+      #cat("this is delta(t)",delta_t,"\n")
+      
+      for (i in 1:length(Att)) {
+        action <- as.character(names(Att)[i])
+        # cat("this is current strat",action,"\n")
+        # cat("this is previous humna action",h_act_prev,"\n")
+        
+        # Attraction vector update rule 
+        Att[[i]] <- (Phi_t*N*Att[[i]]  + ( delta_t[[i]] + (1- delta_t[[i]])*(action == h_act_prev))*as.numeric(reward[action,a_act_prev])) / (Phi_t*N + 1)
+      }
+      #Update the value of N 
+      N <- Phi_t*N + 1
+      #cat(Att,'\n')
+      
+      # Assume human chooses action probabilistically using softmax on Attraction values
+      probs <- exp(lambda*Att)/sum(exp(lambda*Att))
+      
+      # Get actual human action and compute likelihood
+      h_act <- as.character(game_data[indx,"h_action"])
+      act_index <- match(h_act, names(Att))
+      lik_hum[t] <- probs[[act_index]]
+    }
+  }
+  
+ if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret) || is.nan(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+}
+
+# exp2_EWA_self(1,test_data,"-2loglik")
+
+```
+
+## Fitting SEWA 
+```{r}
+
+exp2_SEWA_modelling <- list()
+for(id in unique(dat_exp2$human_id)) {
+  exp2_SEWA_modelling[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
+#   exp2_SEWA_modelling[[id]] <- optim(10.0,fn=exp2_EWA_self,gr = NULL, data=tdat,"-2loglik", lower = 0.0, upper = 200, method="L-BFGS-B")
+# }
+  exp2_SEWA_modelling[[id]] <- DEoptim(fn=exp2_EWA_self, lower = 0.0, upper = 100.0, data=tdat, "-2loglik", control=list(trace = FALSE,parallelType=1))
+}
+
+save(exp2_SEWA_modelling,file="exp2_SEWA_modelling.RData")
+```
+
+
+## Putting all results together 
+```{r}
+
+# Load various modelling tabeles 
+
+load("exp2_TR_bayes.RData")
+load("exp2_NT_bayes.RData")
+load("exp2_QLS_modelling.RData")
+load("exp2_SEWA_modelling.RData")
+
+
+
+
+exp2_results <- data.frame()
+for(id in unique(dat_exp2$human_id)) {
+exp2_results <- rbind(exp2_results,
+                       data.frame(
+                         "ID" = id,
+                         "condition" = dat_exp2[dat_exp2$human_id==id,"condition"][1],
+                         "Random_BIC" = -2*(180*log(1/3)),
+
+                         # Bayesian updating with/without transfer
+                         "Bayes_Tr_BIC" = exp2_TR_bayes[[id]]$value + 2*log(180),
+                         "Bayes_No_Tr_BIC" = exp2_NT_bayes[[id]]$value+ 2*log(180),
+                         # Theta is the parameter governing AI stochasticity. Truth is 0.9
+                         "theta_transfer" = exp2_TR_bayes[[id]]$par[1],
+                         "theta_no_transfer" = exp2_NT_bayes[[id]]$par[1],
+                         # Epsilone is parameter showing cases where human deviates from predictions about opponent (lower better)
+                         "eps_transfer" = exp2_TR_bayes[[id]]$par[2],
+                         "eps_no_transfer" = exp2_NT_bayes[[id]]$par[2],
+
+
+                         # Q-learning with last round states
+                         "QL_states_BIC" = exp2_QLS_modelling[[id]]$optim$bestval + 2*log(180),
+                         # beta ->  inverse temperature parameter in softmax choice function
+                         "QL_states_Beta" = exp2_QLS_modelling[[id]]$optim$bestmem[1],
+                         # alpha -> learning rate in QL update
+                         "QL_states_alpha" = exp2_QLS_modelling[[id]]$optim$bestmem[2],
+
+
+                         # Self-Tuning EWA (only 1 parameter)
+                          # Parametric EWA BIC
+                         "EWA_self_2LL" = exp2_SEWA_modelling[[id]]$optim$bestval,
+                         "EWA_self_BIC" = exp2_SEWA_modelling[[id]]$optim$bestval + 1*log(180),
+                         #Lambda is a parameter of the softmax choice function (inverse Temperature)
+                         "EWA_self_Lambda" = exp2_SEWA_modelling[[id]]$optim$bestmem[1]
+
+                         ))
+}
+
+write.csv(exp2_results,file="exp2_results.csv",row.names = FALSE)
+
+```
+
+```{r}
+exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA")[apply(exp2_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,which.min)])
+
+ write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
+ kable(exp2_table_results)
+```
+```{r}
+exp2_model_comp <- data.frame()
+for(id in unique(dat_exp2$human_id)) {
+  tdat <- subset(dat_exp2,human_id == id)
+  tot_score <- sum(tdat$score)
+  tot_time <- sum(tdat$human_rt)
+  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg"))
+  #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
+  tr_score <- sum(early_dat$score)
+  id_results <- subset(exp2_results, ID == id)
+  min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,min)
+  
+  best_model <- c("random","Bayes Tr","Bayes NT", "QL_states","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,which.min)]
+  # 
+ exp2_model_comp <- rbind(exp2_model_comp ,
+                       data.frame(
+                         "human_id" = id,
+                         "condition" = dat_exp2[dat_exp2$human_id==id,"condition"][1],
+                         "Early_game_score" = tr_score,
+                         "Total_score" = tot_score,
+                         "Best_model" = best_model,
+                         "Total_time" = sum(tdat$human_rt),
+                         "TR_minus_NT_BIC" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
+                         "Rand_minus_best_BIC" =  id_results[,"Random_BIC"] - min_BIC
+
+                       ))
+}
+
+write.csv(exp2_model_comp,file="exp2_model_comp.csv",row.names = FALSE)
+```
+
+# Correlate difference between BICs of Bayes transfer and no transfer with early rounds score (evidence for transfer) 
+```{r}
+
+cor.test(exp2_model_comp$TR_minus_NT_BIC, exp2_model_comp$Early_game_score, method="spearman")
+
+```
+
+
+#Correlation between early game score and difference between best model and random BIC
+```{r}
+cor.test(exp2_model_comp$Rand_minus_best_BIC, exp2_model_comp$Early_game_score, method="spearman")
+
+```
+
+# Histogram of best fitting models 
+```{r}
+barplot(table(exp2_model_comp$Best_model))
+```
+
+
+## Let's compare total scores of each participant by the model of best fit, see if Bayes+transfer total scores are higher than Bayes + no transfer  
+
+```{r}
+
+# ggboxplot(exp2_model_comp, x = "model", y = "Total_score",
+#           color = "model", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+#           order = c("Random", "No Transfer", "Transfer"),
+#           ylab = "Total Score", xlab = "Model with best fit")
+
+exp2_model_comp$model <- recode(exp2_model_comp$Best_model,"Bayes Tr" = "Tranfer","Bayes NT" = "No Transfer", "QL_states" = "Q_Learning",  .default = "Random")
+model <- factor(exp2_model_comp$model)
+condition <- factor(exp2_model_comp$condition)
+
+# Total score by best predictive model 
+tapply(exp2_model_comp$Total_score, model, mean)
+
+# Compute the analysis of variance
+res.aov <- aov(Total_score ~ model + condition, data = exp2_model_comp)
+# Summary of the analysis
+summary(res.aov)
+TukeyHSD(res.aov)
+```
+# Total time by best predictive model
+```{r}
+tapply(exp2_model_comp$Total_time, model, mean)
+
+time.aov <- aov(Total_time ~ model, data = exp2_model_comp)
+# Summary of the analysis
+summary(time.aov)
+TukeyHSD(time.aov)
+
+``` 
