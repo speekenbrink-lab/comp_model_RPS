@@ -1,0 +1,341 @@
+---
+title             : "Learning to learn in a changing environment"
+shorttitle        : "Learning to learn"
+
+author: 
+  - name          : "Maarten Speekenbrink"
+    affiliation   : "1"
+    corresponding : yes    # Define only one corresponding author
+    address       : "Department of Experimental Psychology, University College London, 26 Bedford Way, London WC1H 0AP, United Kingdom"
+    email         : "m.speekenbrink@ucl.ac.uk"
+  - name          : "Akhat Rakishev"
+    affiliation   : "1"
+
+affiliation:
+  - id            : "1"
+    institution   : "Department of Experimental Psychology, University College London"
+
+author_note: |
+  Add complete departmental affiliations for each author here. Each new line herein must be indented, like this line.
+
+  Enter author note here.
+
+abstract: |
+  Enter abstract here. Each new line herein must be indented, like this line.
+  
+keywords          : "keywords"
+wordcount         : "X"
+
+bibliography      : ["r-references.bib"]
+
+figsintext        : yes
+figurelist        : no
+tablelist         : no
+footnotelist      : no
+lineno            : yes
+mask              : no
+
+class             : "man"
+output            : papaja::apa6_pdf
+---
+
+```{r load-packages, include = FALSE}
+library("papaja")
+require(knitr)
+```
+
+```{r analysis-preferences}
+# Seed for random number generation
+set.seed(42)
+```
+
+```{r texreport}
+texreport <- function(object,effect.name,...) UseMethod("texreport")
+texreport.default <- function(object,effect.name,...) return(NULL)
+
+texreport.summary.merMod <- function(object,effect.name,print.estimate=TRUE) {
+  if(effect.name %in% rownames(object$coefficients)) {
+    tab <- object$coefficients
+    estimate <- tab[effect.name,"Estimate"]
+    se <- tab[effect.name,"Std. Error"]
+    Tval <- tab[effect.name,"t value"]
+    df <- tab[effect.name,"df"]
+    pval <- tab[effect.name,"Pr(>|t|)"]
+    if(pval < .001) ptext <- "$p < .001$" else {
+      if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
+        ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
+      }
+    }
+    txt <- paste("$b = ",round(estimate,2),"$, $SE = ",round(se,2),"$, $t(",round(df,2),") = ",round(Tval,2),"$, ",sep="")
+    txt <- paste(txt,ptext,sep="")
+  } else {
+    txt <- "error"
+  }
+  txt
+}
+
+texreport.summary.Anova.mlm <- function(object,effect.name,effect.size=TRUE,sphericity.correction=TRUE) {
+  if(effect.name %in% rownames(object$sphericity.tests) && sphericity.correction && object$sphericity.test[effect.name,"p-value"] < .05) {
+    epsilon <- object$pval.adjustments[effect.name,"HF eps"]
+    pval <- object$pval.adjustments[effect.name,"Pr(>F[HF])"]
+  } else {
+    epsilon <- 1
+    pval <- object$univariate.tests[effect.name,"Pr(>F)"]
+  }
+  df1 <- object$univariate.tests[effect.name,"num Df"]*epsilon
+  df2 <- object$univariate.tests[effect.name,"den Df"]*epsilon
+  Fval <- object$univariate.tests[effect.name,"F"]
+  etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
+  # generate latex output
+  if(pval < .001) ptext <- "$p < .001$" else {
+    if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
+      ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
+    }
+  }
+  txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
+  if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
+  txt <- paste(txt,ptext,sep="")
+  txt
+}
+
+texreport.linearHypothesis.mlm <- function(object,effect.size=TRUE) {
+  if(ncol(object$SSPH) == 1 & nrow(object$SSPH) == 1 & ncol(object$SSPE) == 1 & nrow(object$SSPE) == 1) {
+    df1 <- object$df
+    df2 <- object$df.residual
+    Fval <- (object$SSPH/df1)/(object$SSPE/df2)
+    pval <- 1-pf(Fval,object$df,object$df.residual)
+    etasq <- object$SSPH/(object$SSPH + object$SSPE)
+    # generate latex output
+    if(pval < .001) ptext <- "$p < .001$" else {
+      if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
+        ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
+      }
+    }
+    txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
+    if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
+    txt <- paste(txt,ptext,sep="")
+  } else {
+    txt <- "error"
+  }
+  txt
+}
+
+texreport.anova.lme <- function(object,effect.name,effect.size=FALSE) {
+  if(effect.name %in% rownames(object)) {
+    pval <- object[effect.name,"p-value"]
+    if(is.null(pval)) pval <- object[effect.name,"Pr(>F)"]
+    df1 <- object[effect.name,"numDF"]
+    df2 <- object[effect.name,"denDF"]
+    Fval <- object[effect.name,"F-value"]
+    #etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
+    # generate latex output
+    if(pval < .001) ptext <- "$p < .001$" else {
+      if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
+        ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
+      }
+    }
+    txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
+    #if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
+    txt <- paste(txt,ptext,sep="")
+    txt
+  }
+}
+
+texreport.anova <- function(object,effect.name,effect.size=FALSE) {
+  if(effect.name %in% rownames(object)) {
+    pval <- object[effect.name,"Pr(>F)"]
+    df1 <- object[effect.name,"NumDF"]
+    df2 <- object[effect.name,"DenDF"]
+    Fval <- object[effect.name,"F.value"]
+    #etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
+    # generate latex output
+    if(pval < .001) ptext <- "$p < .001$" else {
+      if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
+        ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
+      }
+    }
+    txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
+    #if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
+    txt <- paste(txt,ptext,sep="")
+    txt
+  }
+}
+
+```
+
+```{r read-data,warning=FALSE}
+source("R/readData.R")
+demo_exit <- read.csv("data/demographics_and_exit_clean.csv")
+trial_data <- read.csv("data/trial_data_clean.csv")
+trial_data$trial <- 1:100
+```
+
+
+# Introduction
+
+## Optimal learning
+
+If the volatility $\sigma_{\xi}(t)$ and noise $\sigma_\epsilon$ are know, optimal Bayesian learning is implemented by the Kalman filter
+$$\hat{\mu}_{t+1} = \hat{\mu}_t + k_t (y_t - \hat{\mu}_{t})$$
+where the "Kalman gain" is $$k_t = \frac{s_t + \sigma^2_{\xi}(t)}{s_t + \sigma^2_\xi(t) + \sigma^2_\epsilon}$$ and $s_t$ is the prior uncertainty about the mean $\mu_t$, computed recursively as $$s_t = (1-k_t)(s_{t-1} + \sigma^2_\xi(t))$$. Note that the updating of estimates $\hat{\mu}_t$ takes the same form as the well-known delta-rule, where each update is proportional to the prediction error ($y_t - \hat{\mu}_t$), with the proportionality constant $k_t$ is the learning rate, which is usually constant in the delta-rule, but time-varying in the Kalman filter and dependent on the prior uncertainty ($s_t$), and the level of volatility ($\sigma_\xi$) and environmental noise ($\sigma_\epsilon$). If both latter parameters are constant, then as $t \rightarrow \infty$, the Kalman gain converges to a constant and thus becomes equal to the constant-learning rate delta-rule. This is the steady-state Kalman filter, and provides a means to determine the optimal (constant) learning rate. The steady state is 
+\begin{equation}k(t)^* = \frac{1}{2} \left(\sqrt{\frac{\sigma^4_\xi}{\sigma^4_\epsilon} + 4 \frac{\sigma^2_\xi}{\sigma^2_\epsilon}} - \frac{\sigma^2_\xi}{\sigma^2_\epsilon} \right)\end{equation}
+
+## A particle filter
+
+When the parameters are unknown, the optimal learning rule becomes intractible. Bayesian scheme's for estimating the parameters on-line need to rely on approximations, such as Monte Carlo Markov Chain estimation, which are impractible for on-line estimation, as for each time point, estimation would have to be started fresh. When the parameters are time-varying, 
+
+# Methods
+We report how we determined our sample size, all data exclusions (if any), all manipulations, and all measures in the study. <!-- 21-word solution (Simmons, Nelson & Simonsohn, 2012; retrieved from http://ssrn.com/abstract=2160588) -->
+
+## Participants and design
+
+One hundred participants (`r  sum(dat$gender[dat$trial == 1] == "Female",na.rm=TRUE)` females, `r  sum(dat$gender[dat$trial == 1] == "Male",na.rm=TRUE)` males, `r sum(is.na(dat$gender[dat$trial == 1]))` other or preferred not to say), aged between `r min(dat$age)` and `r max(dat$age)` ($M = `r round(mean(dat$age[dat$trial==1]),2)`$, $SD = `r round(sd(dat$age[dat$trial==1]),2)`$), voluntarily participated in the study. The participants were recruited from the UCL Psychology and Language Sciences subject pool or by personal invitation from the researchers. Eligible university students ($n=`r sum(dat$version[dat$trial==1] == "sona")`$) received course credit for their participation. In addition, all participants were invited to enter a draw to win one of two gift vouchers (worth £50 and £20). Participants were informed that the chance of winning the prizes was dependent on their performance during the experiment. The study was approved by the UCL ethics committe and all participants provided informed consent before participating in the experiment.
+
+Participants were randomly allocated to either the Gradual change and Abrupt change condition. In the gradual condition, the level of volatility changed according to a sinusoid function, smoothly increasing and decreasing over time. In the abrupt condition, the level of volatility changed in a stepwise manner, being low in some blocks of trials and abruptly increasing in others.
+
+## The Fisher Game
+
+All participants played "The Fisher Game", an online browser-based game programmed in HTML and javascript. In the game, particpants controlled the position of a fisherman's boat in order to catch as many fish as possible. They could maximise the number of fish caught by placing the horizontal position of the boat such that the fishing rod was located at the centre of a school of fish. The further away the rod was from the centre of the school of fish, the less fish they could catch. The horizontal position of the school of fish moved from trial to trial, with the level of movement dependent on the level of volatility. On each of 100 trials participants were asked to choose a position for their boat, effectively predicting were the school of fish would be on that trial. After making their prediction, participants received information about the actual location of the school of fish and how many fish they caught. The game then proceeded to the next trial.
+
+More formally, on each trial $t$ the location of fish $y_t$ was equal to mean fish location $\mu_t$ plus random noise $\epsilon_t$. The mean fish location $\mu_t$ was in turn equal to of the mean fish location on a previous trial, $\mu_{t-1}$,  plus random change $\zeta_t$ representing the effect of volatility:
+
+$$\begin{aligned}
+y_t &= \mu_t + \epsilon_t && & \epsilon_t &\sim \mathcal{N}(0,\sigma_\epsilon) \\
+\mu_t &= \mu_{t-1} + \xi_t && & \zeta_t &\sim \mathcal{N}(0,\sigma_\xi(t))
+\end{aligned}$$
+
+
+The standard deviation of the noise was set to $\sigma_\epsilon = 4$ in all conditions and did not vary over time. The level of volatility, $\sigma_\xi(t)$ (the standard deviation of the changes in mean fish location) varied over time in a way that was specific to each condition. In the Gradual change condition, the volatility varied according to a sinus function:
+
+$$ \sigma_\xi(t) = 16.5 + 13.5 \times \sin \left( -2.5 + \frac{5 \times (t - 1)}{99} \right)$$
+
+In the Abrupt change condition, volatility varied in stepwise way:
+
+$$\sigma_\xi(t) = \begin{cases} 3 & \text{if } t \in [1;25] \text{ or } [51;75] \\ 30 & \text{if } t \in [26;50] \text{ or } [76,;100] \end{cases} $$
+In both conditions lowest volatility was equal to $\sigma_\xi(t) = 3$ and the highest volatility was equal to $\sigma_\xi(t) = 30$. Overall, in both conditions there were two low and two high volatility periods.
+
+```{r task-structure, out.width = "85%", fig.cap = "Data generating process used in the experiment. a) schematic representation of data generation process; b) example of generated data: graphs in the top row show variation of volatility by trial, graphs in the middle row show mean fish location, graphs in the bottom row show observed fish locations."}
+include_graphics("img/task_structure.eps")
+```
+
+We generated ten different random sequences of fish location per condition in advance according to the data generating process described above. This allowed to let each player observe a randomly generated set of locations, making it unlikely that the results would be dependent on the particulars of a single random sequence or that players would be able to help each other by discussing known fish locations.
+ 
+The number of fish caught each trial  was then determined by dividing 0.1 by absolute prediction error (difference between response  and actual location , see the formula below). As generated data and participants’ responses were transformed to fit a 0-1 scale, the reward formula allowed players to catch very high amounts of fish in case of very accurate predictions (capped at 300). At the same time, they were still able to catch few fish even in case of very inaccurate predictions. We used this scoring method to keep players motivated, as due to the randomness in the data generating process it was impossible to exactly predict the next fish location. The scores were not used in actual analysis.
+
+## Procedure
+
+Participants completed the game at their own pace in a single session. After providing informed consent, participants provided demographic information (age, gender, and nationality). They then read instructions, in which they were informed about the game interface, the goal of the game, and the conditions of the prize draw. 
+
+Following the instructions the game started. On each trial, participants could see the location of the school of fish on the previous trial on the game viewport. They were also able to see all past locations of the school of fish in the "location graph" on the right of the game viewport. They then chose the horizontal position of the fishing boat through a mouseclick at any position on the game viewport. After making their choice, the boat smoothly moved to the chosen location, and the school of fish moved to the new location. Participants were then informed about the number of fish they caught on that trial.
+
+```{r game-screen, out.width = "85%", fig.cap = "Illustration of online game interface. Yellow and blue text labels point on to respective interface elements."}
+include_graphics("img/game_screen.eps")
+```
+
+Upon completion of the game participants were redirected to a post-game questionnaire were they were asked to answer the following three questions about the study: "How do you think fish locations were determined from day to day?", "What was your strategy to determine where to fish next?", and "What do you think was the aim of this study?". The answers were given in a free format and were not mandatory.
+
+# Results
+
+## Exclusions
+
+Four of the 100 participants were excluded from further analysis because both the mean squared error of their choices and the mean reaction time further than two standard deviations removed from the sample mean. Of the remaining `r with(subset(trial_data,trial == 1),length(condition))` participants `r with(subset(trial_data,trial == 1),{tab <- table(condition); tab[names(tab) == "abrupt"]})` were in the abrupt and `r with(subset(trial_data,trial == 1),{tab <- table(condition); tab[names(tab) == "gradual"]})` in the gradual condition. 
+
+## Performance
+
+Participants' average mean squared error was equal to 0.012 (SD = 0.006) and average mean reaction time to 2207.43 (SD = 949.815) milliseconds. Mean reaction times did not differ between conditions (t(72.37) = 1.17, p = .248). Mean squared error was significantly higher (t(78.09) = -4.23, p < .001) in the gradual condition (M = .015) than in the abrupt condition (M = .010).
+
+## Empirical learning rates
+
+According to the "delta-rule", fish locations are learned as
+
+$$\hat{y}_{t+1} = \hat{y}_{t} + \eta(t) \left( y_{t} - \hat{y}_{t} \right)$$
+where we allow the learning-rate $\eta(t) > 0$ to vary from trial to trial. Assuming that participants location choices $r_t$ are a noisy reflection of their location predictions:
+$$\begin{aligned} r_t = \hat{y}_t + e_t && e_t \sim \mathcal{N}(0,\sigma_e)\end{aligned}$$
+we substitute $r_t = \hat{y}_t$ and re-arrange this equation to 
+
+$$\begin{aligned} r_{t+1} - r_{t} &= \eta(t) \left( y_{t} - r_{t} \right) \\ u_t &= \eta(t) d_t \end{aligned}$$
+with $u_{i,t} = (r_{i,t+1} - r_{i,t})$ representing the update in location choice from trial $t$ to trial $t+1$ and $d_{i,t}= (y_{i,t} - r_{i,t})$ the deviation between location choice and true location on trial $t$. To assess the relation between $\eta(t)$ and the optimal learning rate $\omega_t = \frac{\sigma_\xi^2(t)}{\sigma_\xi^2(t) + \sigma^2_\epsilon}$, we estimated a linear mixed-effects model
+
+<!-- with $u_{i,t} = (r_{i,t+1} - r_{i,t})$ (the update in location choice from trial $t$ to trial $t+1$ for participant $i$) as dependent variable and $d_{i,t}= (y_{i,t} - r_{i,t})$ (the deviation between location choice and true location on trial $t$ for participant $i$) as predictor: -->
+
+$$u_{i,t} = \left(\beta_d + b_{di} + \beta_{dC} C_i + \beta_{d\omega} \omega_{it} + b_{d\omega i} \omega_{it} \right) d_{it} + e_{t,i}$$
+where $C$ is a contrast-coded predictor for condition ($C = 1$ for the abrupt, and $C = -1$ for the gradual condition), each $\beta$ term is a fixed effect, and each $b$ term a participant-wise random effect. Random intercepts and slopes were allowed to correlate. The model was estimated with the lme4 package for R [@R-lme4], and $p$-values were computed with the lmerTest package [@R-lmerTest]. 
+```{r mixed-effects,cache=TRUE,echo=FALSE}
+require(lmerTest)
+dat <- subset(trial_data,trial < 100)
+dat$omega <- .5*(sqrt(dat$volatility^4/4^4 + 4*dat$volatility^2/4^2) - dat$volatility^2/4^2) # (2*dat$volatility^2)/(2*dat$volatility^2 + 4^2)
+
+mod0 <- lmer(update ~ condition_as_number*omega*error + (scale(omega)*error|id),data=dat)
+mod1 <- lmer(update ~ error + condition_as_number:error + omega:error + condition_as_number:omega:error - 1 + (0 + error + scale(omega):error|id),data=dat)
+mod1_summ <- summary(mod1)
+mod0_summ <- summary(mod0)
+aov_full_reduced <- anova(mod0,mod1)
+```
+There was a significant main effect of deviation, `r texreport(mod1_summ,"error")`. This effect of error was moderated by the steady-state learning rate, `r texreport(mod1_summ,"error:omega")` and condition, `r texreport(mod1_summ,"error:condition_as_number")`. There was also a three-way interaction between deviation, optimal learning rate, and condition, `r texreport(mod1_summ,"error:condition_as_number:omega")`.
+
+
+We also estimated a linear-mixed effects model which, in addition to these effects, included fixed effects of condition ($C$), optimal learning rate ($\omega$), as well as all two-way and three-way interactions between these variables and deviation ($d$). This model also included an additional random effect for optimal learning rate ($\omega$). Comparing these two models indicated that the latter, more complex model fitted the data significantly better than the first, simpler model, $\chi^2(`r aov_full_reduced$'Chi Df'[2]`) = `r printnum(aov_full_reduced$'Chisq'[2])`$, $p = `r round(aov_full_reduced$'Pr(>Chisq)'[2],3)`$. Hence, we report the results from the full model. There was a significant main effect of deviation, `r texreport(mod0_summ,"error")`. This effect of error was moderated by the optimal learning rate, `r texreport(mod0_summ,"omega:error")` and condition, `r texreport(mod0_summ,"condition_as_number:error")`. There was also a three-way interaction between deviation, optimal learning rate, and condition, `r texreport(mod0_summ,"condition_as_number:omega:error")`. Finally, there was a significant main effect of condition, `r texreport(mod0_summ,"condition_as_number")`, which is difficult to interpret, but indicates a small bias where ...
+
+These effects are more easily interpreted when inspecting the model-predicted learning rate (Figure \@ref(fig:learning-rate-plot)). As can be seen there, while on average, people adapt their learning rate to the changes in volatility, the adaptation is more marked in the gradual compared to the abrupt change condition. Also, the predicted learning rates are mostly higher than the optimal steady-state learning rates.  
+```{r learning-rate-plot,echo=FALSE,out.width = "85%", fig.width=6, fig.height=3, fig.cap="Predicted learning rates from the linear mixed-effects model as a function of the optimal learning rate."}
+require(ggplot2)
+require(lmerTest)
+coef <- fixef(mod0)
+
+# newdata <- expand.grid(condition=c("abrupt","gradual"),omega = seq(min(dat$omega),max(dat$omega),length=100))
+# newdata$condition_as_number <- 1
+# newdata$condition_as_number[newdata$condition == "abrupt"] <- -1
+# coeff <-  fixef(mod0)
+# 
+# newdata$pred_eta <- coeff["error"] + coeff["condition_as_number:error"]*newdata$condition_as_number + coeff["omega:error"]*newdata$omega + coeff["condition_as_number:omega:error"]*newdata$condition_as_number*newdata$omega
+# ggplot(newdata,aes(x=omega,y=pred_eta,colour=condition)) + geom_line() + ylab("predicted learning rate") + xlab("optimal learning rate") + ylim(c(min(newdata$omega),max(newdata$pred_eta))) + xlim(c(min(newdata$omega),max(newdata$pred_eta))) + geom_abline(slope=1,intercept=0,lty=2,colour=grey(.5))
+
+
+newdata <- data.frame(condition=rep(c("abrupt","gradual"),each=100),volatility = c(subset(trial_data,condition=="abrupt")$volatility[1:100],subset(trial_data,condition=="gradual")$volatility[1:100]),trial=1:100)
+newdata$omega <- .5*(sqrt(newdata$volatility^4/4^4 + 4*newdata$volatility^2/4^2) - newdata$volatility^2/4^2) # (2*newdata$volatility^2)/(2*newdata$volatility^2 + 4^2)
+newdata$condition_as_number <- 1
+newdata$condition_as_number[newdata$condition == "abrupt"] <- -1
+newdata$type = "optimal"
+
+newdata <- rbind(newdata,cbind(newdata[,1:5],type="estimated"))
+
+coeff <-  fixef(mod1)
+newdata$omega[newdata$type=="estimated"] <- coeff["error"] + coeff["error:condition_as_number"]*newdata$condition_as_number[newdata$type=="estimated"] + coeff["error:omega"]*newdata$omega[newdata$type=="estimated"] + coeff["error:condition_as_number:omega"]*newdata$condition_as_number[newdata$type=="estimated"]*newdata$omega[newdata$type=="estimated"]
+
+# coeff <-  fixef(mod0)
+# newdata$omega[newdata$type=="estimated"] <- coeff["error"] + coeff["condition_as_number:error"]*newdata$condition_as_number[newdata$type=="estimated"] + coeff["omega:error"]*newdata$omega[newdata$type=="estimated"] + coeff["condition_as_number:omega:error"]*newdata$condition_as_number[newdata$type=="estimated"]*newdata$omega[newdata$type=="estimated"]
+
+ggplot(newdata,aes(x=trial,y=omega,colour=type)) + geom_line() + ylab("(predicted) learning rate") + xlab("trial") + facet_wrap(~condition) + theme(legend.position="bottom") #+ ylim(c(min(newdata$omega),max(newdata$pred_eta))) + xlim(c(min(newdata$omega),max(newdata$pred_eta))) + geom_abline(slope=1,intercept=0,lty=2,colour=grey(.5))
+
+
+```
+
+<!--
+. However, as the comparison just fails significance, we also report the results of the more complex model in the appendix.
+
+
+
+provides us with a trial-by-trial estimate of the learning rate
+$$\hat{\eta}(t) = \frac{r_{t + 1} - r_{t}}{y_t - r_t}$$
+Under the assumption that $r_t$ is Normal distributed, this empricial learning rate follows a general Cauchy distribution.
+-->
+
+
+
+# Discussion
+
+
+\newpage
+
+# References
+```{r create_r-references}
+r_refs(file = "r-references.bib")
+```
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+
+<div id = "refs"></div>
+\endgroup
+
