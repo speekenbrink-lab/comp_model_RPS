@@ -288,11 +288,11 @@ exp2_QL_states <- function(par,data,return_value,gamma){
     # cat(new_state,"This is new state","\n")
     
     # Q_learning: update rule (time  = t-1)
-    Q_vals[curr_state, h_act] <- Q_vals[curr_state, h_act] + alpha*( reward + gamma*max(Q_vals[new_state,]) - Q_vals[curr_state, h_act])
+    Q_vals[curr_state, h_act] <- Q_vals[curr_state, h_act] + alpha*( reward + gamma*max(Q_vals[new_state,]) - Q_vals[curr_state, h_act] )
     
     # Assume human chooses action probabilistically using softmax on Q values
     probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
-    if (data[t,"round"] == 20) { cat(probs,"\n") }
+    #if (data[t,"round"] == 20) { cat(probs,"\n") }
     
     # Get actual human action and compute likelihood
     h_act <- as.character(data[t,"h_action"])

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2019.10.8)  11 DEC 2019 14:03
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2019.10.8)  12 DEC 2019 12:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -375,7 +375,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 (./draft_report-concordance.tex)
 ! Misplaced alignment tab character &.
-l.39 ... which theory of mind abilities (Premack &
+l.40 ... which theory of mind abilities (Premack &
                                                    Woodruff, 1978) play a ro...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
@@ -385,7 +385,7 @@ you're probably due for more error messages, and you
 might try typing `S' now just to see what is salvageable.
 
 ! Misplaced alignment tab character &.
-l.43 ...nced vs non experienced players. Camerer &
+l.44 ...nced vs non experienced players. Camerer &
                                                    Knez (2000) test learning...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
@@ -398,8 +398,18 @@ might try typing `S' now just to see what is salvageable.
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
 ! Misplaced alignment tab character &.
-l.46 ... using economic signalling games, Cooper &
+l.47 ... using economic signalling games, Cooper &
                                                    Kagel (2003, 2004, 2008) ...
+I can't figure out why you would want to use a tab mark
+here. If you just want an ampersand, the remedy is
+simple: Just type `I\&' now. But if some right brace
+up above has ended a previous alignment prematurely,
+you're probably due for more error messages, and you
+might try typing `S' now just to see what is salvageable.
+
+! Misplaced alignment tab character &.
+l.51 ...to the opponent they are facing. Shachat &
+                                                   Swarthout (2004) made hum...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
 simple: Just type `I\&' now. But if some right brace
@@ -409,8 +419,8 @@ might try typing `S' now just to see what is salvageable.
 
 [2]
 ! Misplaced alignment tab character &.
-l.53 ...to the opponent they are facing. Shachat &
-                                                   Swarthout (2004) made hum...
+l.54 ...'level-k' theory, first adopted by Stahl &
+                                                   wilson (1995). It posits ...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
 simple: Just type `I\&' now. But if some right brace
@@ -419,17 +429,7 @@ you're probably due for more error messages, and you
 might try typing `S' now just to see what is salvageable.
 
 ! Misplaced alignment tab character &.
-l.60 ...'level-k' theory, first adopted by Stahl &
-                                                   wilson (1995) which posit...
-I can't figure out why you would want to use a tab mark
-here. If you just want an ampersand, the remedy is
-simple: Just type `I\&' now. But if some right brace
-up above has ended a previous alignment prematurely,
-you're probably due for more error messages, and you
-might try typing `S' now just to see what is salvageable.
-
-! Misplaced alignment tab character &.
-l.60 ...t strategy in the game environment (Arad &
+l.54 ...t strategy in the game environment (Arad &
                                                    Rubinstein, 2012). Level-...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
@@ -438,9 +438,12 @@ up above has ended a previous alignment prematurely,
 you're probably due for more error messages, and you
 might try typing `S' now just to see what is salvageable.
 
-[3] [4] [5]
+[3] [4]
+Missing character: There is no Â in font cmr12!
+Missing character: There is no £ in font cmr12!
+ [5]
 ! Misplaced alignment tab character &.
-l.97 Goodie, A. S., Doshi, P., &
+l.96 Goodie, A. S., Doshi, P., &
                                  Young, D. L. (2012). Levels of theory-of-mi...
 I can't figure out why you would want to use a tab mark
 here. If you just want an ampersand, the remedy is
@@ -451,18 +454,18 @@ might try typing `S' now just to see what is salvageable.
 
 [6] (./draft_report.aux) ) 
 Here is how much of TeX's memory you used:
- 3631 strings out of 492982
- 50871 string characters out of 6134896
- 111479 words of memory out of 5000000
- 7110 multiletter control sequences out of 15000+600000
- 20232 words of font info for 49 fonts, out of 8000000 for 9000
+ 3655 strings out of 492982
+ 51127 string characters out of 6134896
+ 112479 words of memory out of 5000000
+ 7127 multiletter control sequences out of 15000+600000
+ 23964 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 41i,6n,32p,1757b,194s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,6n,32p,2140b,194s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr1
 7.pfb>
-Output written on draft_report.pdf (6 pages, 64082 bytes).
+Output written on draft_report.pdf (6 pages, 64707 bytes).
 PDF statistics:
  36 PDF objects out of 1000 (max. 8388607)
  23 compressed objects within 1 object stream
