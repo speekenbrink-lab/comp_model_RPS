@@ -452,16 +452,147 @@ for(id in unique(dat_exp2$human_id)) {
 save(exp2_SEWA_modelling,file="exp2_SEWA_modelling.RData")
 ```
 
+## MBM in experiment 2  
+```{r}
+MBM_2 <- function(par,data,return_value,gamma){
+  # Par[1] -> beta= inverse temperature parameter in softmax choice function
+  # Par[2] -> lambda = learning rate (one per game?)
+  # data : participant and ai choice data.
+  # return_value=c("-2loglik","likelihood_by_trial")
+  # Gamma is discount factor for future rewards 
+  # Returns Q-values per trial and predicts choice using softmax
+  beta <- par[1]
+  alpha <- par[2]
+
+  #gamma <- 0.9 
+
+  #Define matrix of state spaces for each game 
+  G1 <- expand.grid(c("R", "P", "S"),c("R", "P", "S"))
+  states_RPS <- paste0(G1$Var1,G1$Var2)
+
+  G2 <- expand.grid(c("F", "W", "G"), c("F", "W", "G"))
+  states_FWG <- paste0(G2$Var1,G2$Var2)
+
+  G3 <- expand.grid(c("left","right","center"), c("left","right","center"))
+  states_SHOOT <- paste0(G3$Var1,G3$Var2)
+  
+  # Matrices to store Q_values in each state 
+  Q_vals_RPS = matrix(-0.5,9,3)
+  dimnames(Q_vals_RPS) = list(states_RPS, c("R", "P", "S"))
+  Q_vals_FWG = matrix(-0.5,9,3)
+  dimnames(Q_vals_FWG) = list(states_FWG, c("F", "W", "G"))
+  Q_vals_SHOOT = matrix(-0.5,9,3)
+  dimnames(Q_vals_SHOOT) = list(states_SHOOT, c("left","right","center"))
+  
+  # Transition Matrices 
+  Transit_RPS = matrix(0,9,9)
+  dimnames(Transit_RPS) = list(states_RPS, states_RPS)
+  Transit_FWG = matrix(0,9,9)
+  dimnames(Transit_FWG) = list(states_FWG, states_FWG)
+  Transit_SHOOT = matrix(0,9,9)
+  dimnames(Transit_SHOOT) = list(states_SHOOT, states_SHOOT)
+  
+  
+  lik_hum <- matrix(0.0,nrow(data))
+  nopts <- 3
+
+  for(t in 1:nrow(data)) {
+    t_game <- data[t,"game"]
+    if(data[t,"round"] == 1) {
+      # first round is uniform prediction
+      Q_vals <- switch(as.character(t_game),rps=Q_vals_RPS,fwg = Q_vals_FWG, shootout = Q_vals_SHOOT)
+      state_vec <- switch(as.character(t_game),rps=states_RPS,fwg = states_FWG, shootout = states_SHOOT)
+      Transit <- switch(as.character(t_game),rps=Transit_RPS,fwg = Transit_FWG, shootout = Transit_SHOOT)
+      lik_hum[t] <- 1/nopts
+      
+      # Randomly select prev_state and actions for first round
+      curr_state <- sample(state_vec, size = 1)
+      h_act <- sample(colnames(Q_vals), size =1)
+      ai_act <- sample(colnames(Q_vals), size =1)
+      reward <- 0 
+      
+    } else {
+      # Get past human action and associated reward 
+      h_act <- as.character(data[t-1,"h_action"])
+      ai_act <- as.character(data[t-1,"a_action"])
+      reward <- as.numeric(data[t-1,"score"])
+    }
+    
+    
+    # cat(curr_state, " This is the previous state", "\n")
+    new_state <- paste0(h_act,ai_act)
+    # cat(new_state,"This is new state","\n")
+    
+    
+    # Update Transit matrix ....first create hot vector = 1 if new state, 0 otherwise 
+    hot_vector <- state_vec == new_state
+  
+    
+    # Transit probs update: TD learning on transition matrix, learning rate fixed at 0.1
+    Transit[curr_state,] <- Transit[curr_state,] + 0.1* (hot_vector - Transit[curr_state,])
+    #cat(Transit[curr_state,], "\n")
+    
+    # Update Q-values as current reward + a weighted (by trasnsit probs) average of future Q-values.
+    Q_Row_max <- apply(Q_vals, 1, max, na.rm = TRUE)
+    #cat(Transit[curr_state,] * Q_Row_max, "\n")
+    Q_vals[curr_state, h_act] <- reward +  gamma*( Transit[curr_state,] %*% Q_Row_max  ) 
+    
+    
+    # Assume human chooses action probabilistically using softmax on Q values
+    probs <- exp(Q_vals[new_state,]/beta)/sum(exp(Q_vals[new_state,]/beta))
+    #if (data[t,"round"] == 50) { cat(Q_vals,"\n") }
+    
+    # Get actual human action and compute likelihood
+    h_act <- as.character(data[t,"h_action"])
+    act_index <- match(h_act, colnames(Q_vals))
+    lik_hum[t] <- probs[[act_index]]
+      
+    # Update state
+    curr_state<- new_state 
+    #}
+  }
+  if(return_value == "-2loglik") {
+    ret <- -2*sum(log(lik_hum))
+    if(is.infinite(ret) || is.nan(ret)) {
+      return(1e+300)
+    } else {
+      return(ret)
+    }
+  }
+  if(return_value == "likelihood_by_trial") return(lik_hum)
+  
+}
+
+
+```
+
+```{r}
+
+#MBM_2(c(2, 0.1), test_data,"-2loglik", gamma = 0.9 )
+
+MBM2_modelling <- list()
+for(id in unique(dat$human_id)) {
+  MBM_modelling[[id]] <- list()
+  tdat <- subset(dat,human_id == id)
+  # MBM_modelling[[id]] <- optim(c(1,0.1),fn=QMBM,gr = NULL, data=tdat,"-2loglik", gamma =0 , lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
+
+   MBM2_modelling[[id]] <- DEoptim(fn=MBM_2,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0.9, control=list(trace = FALSE,parallelType=1))
+}
+
+save(MBM2_modelling, file="MBM2_modelling.RData")
+
+```
 
 ## Putting all results together 
 ```{r}
 
-# Load various modelling tabeles 
+# Load various modelling tables 
 
 load("exp2_TR_bayes.RData")
 load("exp2_NT_bayes.RData")
 load("exp2_QLS_modelling.RData")
 load("exp2_SEWA_modelling.RData")
+load("MBM2_modelling.RData")
 
 
 
@@ -491,14 +622,21 @@ exp2_results <- rbind(exp2_results,
                          "QL_states_Beta" = exp2_QLS_modelling[[id]]$optim$bestmem[1],
                          # alpha -> learning rate in QL update
                          "QL_states_alpha" = exp2_QLS_modelling[[id]]$optim$bestmem[2],
-
-
+                         
                          # Self-Tuning EWA (only 1 parameter)
-                          # Parametric EWA BIC
+                          # BIC
                          "EWA_self_2LL" = exp2_SEWA_modelling[[id]]$optim$bestval,
                          "EWA_self_BIC" = exp2_SEWA_modelling[[id]]$optim$bestval + 1*log(180),
                          #Lambda is a parameter of the softmax choice function (inverse Temperature)
-                         "EWA_self_Lambda" = exp2_SEWA_modelling[[id]]$optim$bestmem[1]
+                         "EWA_self_Lambda" = exp2_SEWA_modelling[[id]]$optim$bestmem[1],
+                         
+                         # Model Based Model
+                          # BIC
+                         "MBM_2LL" = MBM2_modelling[[id]]$optim$bestval,
+                         "MBM2_BIC" = MBM2_modelling[[id]]$optim$bestval + 2*log(180),
+                          # Alpha is learning rate, beta is temperature in softmax
+                         "MBM2_alpha" = MBM2_modelling[[id]]$optim$bestmem[1],
+                         "MBM2_beta" = MBM2_modelling[[id]]$optim$bestmem[2]
 
                          ))
 }
@@ -513,6 +651,7 @@ exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","B
  write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
  kable(exp2_table_results)
 ```
+
 ```{r}
 exp2_model_comp <- data.frame()
 for(id in unique(dat_exp2$human_id)) {
@@ -586,6 +725,7 @@ res.aov <- aov(Total_score ~ model + condition, data = exp2_model_comp)
 summary(res.aov)
 TukeyHSD(res.aov)
 ```
+
 # Total time by best predictive model
 ```{r}
 tapply(exp2_model_comp$Total_time, model, mean)
