@@ -28,6 +28,7 @@ library(MASS)
 library(ggpubr)
 library(PairedData)
 library(multcompView)
+library(lsmeans)
 
 
 # transform 'winner' variable in numeric score

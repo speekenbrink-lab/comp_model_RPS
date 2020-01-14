@@ -4,6 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
@@ -37,7 +38,10 @@ library(ggpubr)
 ```{r}
 # Read in cleaned data file
 dat_exp2 <- read.csv("data_exp2.csv")
+test_data = subset(dat_exp2,human_id == "bZg1T3MNoItL6b7qAAAj")
+```
 
+```{r}
 # Function to produce best reponse to ai_action in exp2
 exp2_best_response <- function(game,ai_action){
   if (game == "rps"){
@@ -190,7 +194,6 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_tran
 
 ```{r}
 
-test_data = subset(dat_exp2,human_id == "bZg1T3MNoItL6b7qAAAj")
 exp2_naive_bayes(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik",TRUE)
 ```
 ## Fitting Bayesian model with transfer  
@@ -571,9 +574,9 @@ MBM_2 <- function(par,data,return_value,gamma){
 #MBM_2(c(2, 0.1), test_data,"-2loglik", gamma = 0.9 )
 
 MBM2_modelling <- list()
-for(id in unique(dat$human_id)) {
-  MBM_modelling[[id]] <- list()
-  tdat <- subset(dat,human_id == id)
+for(id in unique(dat_exp2$human_id)) {
+  MBM2_modelling[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
   # MBM_modelling[[id]] <- optim(c(1,0.1),fn=QMBM,gr = NULL, data=tdat,"-2loglik", gamma =0 , lower = c(0,0), upper = c(10,0.99), method="L-BFGS-B")
 
    MBM2_modelling[[id]] <- DEoptim(fn=MBM_2,lower = c(0,0), upper = c(10,1), data=tdat,"-2loglik", gamma = 0.9, control=list(trace = FALSE,parallelType=1))
@@ -593,8 +596,6 @@ load("exp2_NT_bayes.RData")
 load("exp2_QLS_modelling.RData")
 load("exp2_SEWA_modelling.RData")
 load("MBM2_modelling.RData")
-
-
 
 
 exp2_results <- data.frame()
@@ -646,7 +647,7 @@ write.csv(exp2_results,file="exp2_results.csv",row.names = FALSE)
 ```
 
 ```{r}
-exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA")[apply(exp2_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,which.min)])
+exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA","MBM")[apply(exp2_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
 
  write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
  kable(exp2_table_results)
@@ -662,9 +663,9 @@ for(id in unique(dat_exp2$human_id)) {
   #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(exp2_results, ID == id)
-  min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,min)
+  min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,min)
   
-  best_model <- c("random","Bayes Tr","Bayes NT", "QL_states","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC")],1,which.min)]
+  best_model <- c("random","Bayes Tr","Bayes NT", "QL_states","S_EWA", "MBM")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)]
   # 
  exp2_model_comp <- rbind(exp2_model_comp ,
                        data.frame(
