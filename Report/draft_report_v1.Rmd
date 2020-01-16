@@ -1,6 +1,5 @@
 ---
 title             : "Transfer of Learned Opponent Models in Zero Sum Games"
-
 shorttitle        : "Draft-1"
 
 author: 
@@ -27,7 +26,8 @@ abstract: |
 keywords          : "keywords"
 wordcount         : "X"
 
-# bibliography      : ["r-references.bib"]
+bibliography      : ["Mendeley.bib"]
+csl               : "apa-6th-edition.csl"
 
 floatsintext      : yes
 figurelist        : no
@@ -40,11 +40,11 @@ draft             : no
 fig_caption       : yes
 
 
-documentclass     : "apa6"
-classoption       : "man"
+# documentclass     : "apa6"
+# classoption       : "man"
 output            : papaja::apa6_pdf
 header-includes   :
-  - \usepackage[document]{ragged2e}
+  - \shorttitle{}
 ---
 
 ```{r load-packages, include = FALSE}
@@ -68,126 +68,6 @@ library(lsmeans)
 set.seed(42)
 ```
 
-```{r texreport}
-# texreport <- function(object,effect.name,...) UseMethod("texreport")
-# texreport.default <- function(object,effect.name,...) return(NULL)
-# 
-# texreport.summary.merMod <- function(object,effect.name,print.estimate=TRUE) {
-#   if(effect.name %in% rownames(object$coefficients)) {
-#     tab <- object$coefficients
-#     estimate <- tab[effect.name,"Estimate"]
-#     se <- tab[effect.name,"Std. Error"]
-#     Tval <- tab[effect.name,"t value"]
-#     df <- tab[effect.name,"df"]
-#     pval <- tab[effect.name,"Pr(>|t|)"]
-#     if(pval < .001) ptext <- "$p < .001$" else {
-#       if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
-#         ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
-#       }
-#     }
-#     txt <- paste("$b = ",round(estimate,2),"$, $SE = ",round(se,2),"$, $t(",round(df,2),") = ",round(Tval,2),"$, ",sep="")
-#     txt <- paste(txt,ptext,sep="")
-#   } else {
-#     txt <- "error"
-#   }
-#   txt
-# }
-
-# texreport.summary.Anova.mlm <- function(object,effect.name,effect.size=TRUE,sphericity.correction=TRUE) {
-#   if(effect.name %in% rownames(object$sphericity.tests) && sphericity.correction && object$sphericity.test[effect.name,"p-value"] < .05) {
-#     epsilon <- object$pval.adjustments[effect.name,"HF eps"]
-#     pval <- object$pval.adjustments[effect.name,"Pr(>F[HF])"]
-#   } else {
-#     epsilon <- 1
-#     pval <- object$univariate.tests[effect.name,"Pr(>F)"]
-#   }
-#   df1 <- object$univariate.tests[effect.name,"num Df"]*epsilon
-#   df2 <- object$univariate.tests[effect.name,"den Df"]*epsilon
-#   Fval <- object$univariate.tests[effect.name,"F"]
-#   etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
-#   # generate latex output
-#   if(pval < .001) ptext <- "$p < .001$" else {
-#     if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
-#       ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
-#     }
-#   }
-#   txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
-#   if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
-#   txt <- paste(txt,ptext,sep="")
-#   txt
-# }
-# 
-# texreport.linearHypothesis.mlm <- function(object,effect.size=TRUE) {
-#   if(ncol(object$SSPH) == 1 & nrow(object$SSPH) == 1 & ncol(object$SSPE) == 1 & nrow(object$SSPE) == 1) {
-#     df1 <- object$df
-#     df2 <- object$df.residual
-#     Fval <- (object$SSPH/df1)/(object$SSPE/df2)
-#     pval <- 1-pf(Fval,object$df,object$df.residual)
-#     etasq <- object$SSPH/(object$SSPH + object$SSPE)
-#     # generate latex output
-#     if(pval < .001) ptext <- "$p < .001$" else {
-#       if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
-#         ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
-#       }
-#     }
-#     txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
-#     if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
-#     txt <- paste(txt,ptext,sep="")
-#   } else {
-#     txt <- "error"
-#   }
-#   txt
-# }
-# 
-# texreport.anova.lme <- function(object,effect.name,effect.size=FALSE) {
-#   if(effect.name %in% rownames(object)) {
-#     pval <- object[effect.name,"p-value"]
-#     if(is.null(pval)) pval <- object[effect.name,"Pr(>F)"]
-#     df1 <- object[effect.name,"numDF"]
-#     df2 <- object[effect.name,"denDF"]
-#     Fval <- object[effect.name,"F-value"]
-#     #etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
-#     # generate latex output
-#     if(pval < .001) ptext <- "$p < .001$" else {
-#       if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
-#         ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
-#       }
-#     }
-#     txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
-#     #if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
-#     txt <- paste(txt,ptext,sep="")
-#     txt
-#   }
-# }
-# 
-# texreport.anova <- function(object,effect.name,effect.size=FALSE) {
-#   if(effect.name %in% rownames(object)) {
-#     pval <- object[effect.name,"Pr(>F)"]
-#     df1 <- object[effect.name,"NumDF"]
-#     df2 <- object[effect.name,"DenDF"]
-#     Fval <- object[effect.name,"F.value"]
-#     #etasq <- object$univariate.tests[effect.name,"SS"]/(object$univariate.tests[effect.name,"SS"] + object$univariate.tests[effect.name,"Error SS"])
-#     # generate latex output
-#     if(pval < .001) ptext <- "$p < .001$" else {
-#       if(pval < .05) ptext <- paste("$p = .",strsplit(as.character(round(pval,3)),".",fixed=TRUE)[[1]][2],"$",sep="") else {
-#         ptext <- paste("$p = .",strsplit(as.character(round(pval,2)),".",fixed=TRUE)[[1]][2],"$",sep="")
-#       }
-#     }
-#     txt <- paste("$F(",round(df1,2),",",round(df2,2),") = ",round(Fval,2),"$, ",sep="")
-#     #if(effect.size) txt <- paste(txt,"$\\eta^2_\\text{p} = ",round(etasq,2),"$, ",sep="")
-#     txt <- paste(txt,ptext,sep="")
-#     txt
-#   }
-# }
-
-```
-
-```{r read-data,warning=FALSE}
-# source("R/readData.R")
-# demo_exit <-  read.csv("data/demographics_and_exit_clean.csv")
-# trial_data <- read.csv("data/trial_data_clean.csv")
-# trial_data$trial <- 1:100
-```
 
 ```{r, include=FALSE} 
 options(tinytex.verbose = TRUE)
@@ -195,7 +75,7 @@ options(tinytex.verbose = TRUE)
 
 
 # Introduction
-Being able to transfer previously acquired knowledge to a new domain is one of the hallmarks of human intelligence (Taylor et al., 2008). Humans are naturally endowed with the ability to extract relevant features from a situation, identify the presence of these features in a novel setting and use previously acquired knowledge to adapt to previously unseen challenges using acquired knowledge. More formally, Perkins (1992) defines transfer of learning as the application of skills, knowledge, and/or attitudes that were learned in one situation to another learning situation. This typically human skill has so far eluded modern ai agents. Deep neural networks for instance can do very well on image recognition tasks and can even reach super-human performance levels on video and strategic board games. Yet they struggle to learn as fast or as efficiently as humans do, and more importantly they have a very limited ability to generalize and transfer knowledge to new domains. Lake et al.(2017) argue that human learning transfer abilities take advantage of important cognitive building blocks such as a deeper representation of concepts underlying tasks and compositionally structured causal models of the environment.
+Being able to transfer previously acquired knowledge to a new domain is one of the hallmarks of human intelligence [@taylor2008transfer]. Humans are naturally endowed with the ability to extract relevant features from a situation, identify the presence of these features in a novel setting and use previously acquired knowledge to adapt to previously unseen challenges using acquired knowledge. More formally, Perkins (1992) defines transfer of learning as the application of skills, knowledge, and/or attitudes that were learned in one situation to another learning situation. This typically human skill has so far eluded modern ai agents. Deep neural networks for instance can do very well on image recognition tasks and can even reach super-human performance levels on video and strategic board games. Yet they struggle to learn as fast or as efficiently as humans do, and more importantly they have a very limited ability to generalize and transfer knowledge to new domains. [@lakeBuildingMachinesThat2017] @lake2017building argue that human learning transfer abilities take advantage of important cognitive building blocks such as a deeper representation of concepts underlying tasks and compositionally structured causal models of the environment.
 
 In this paper, we are specifically interested in the way in which people build and use models of their opponent to facilitate learning transfer, when engaged in situations involving an interaction with strategic considerations. These situations arise frequently such as in negotiations, auctions, strategic planning and all other domains in which theory of mind abilities (Premack & Woodruff, 1978) play a role in determining human behaviour.  
 
@@ -217,6 +97,8 @@ Another potential issue in the experimental paradigms used in the learning trans
 To address some of these limitations in the existing literature on learning transfer outlined above, we propose to explore opponent modelling and its transfer with the use of computer agents possessing human-like theory of mind abilities with limited degrees of iterated reasoning. The agents will have a fixed strategy played stochastically and will either be level-1 or level-2 behavioral rule, mimicking human theory of mind abilities and the limited recursion depth they exhibit (Goodie et al., 2012). We also use a set of purely competitive zero-sum games that incentivise reasoning about the opponent without introducing social confounding factors. We measure transfer of learning about the opponent strategy between games with varying degrees of similarity. The first two games we use are identical except for action labels. In one experiment, the third game is strategically similar to the first two but descriptively different, while in a second experiment, we introduce a third game that is dissimilar to the first two in terms of payoff matrix and strategic structure while retaining, like all other games, a unique mixed strategy Nash equilibrium of random action with 0 expected reward against a Nash player. 
 
 Finally, unlike the vast majority of experimental paradigms, we make participants play the games in an engaging, interactive and ultimately more ecological way rather than simply provide the matrix form of the game. We use visual aids representing the player and their computer opponent as well as the various actions that people can select built on a highly interactive interface providing image, audio and sometimes video feedback at each step, from choosing actions, to presenting outcomes of the rounds and players scores. 
+
+\newpage
 
 # Methods
 
@@ -245,6 +127,9 @@ knitr::include_graphics("../Report/images/feedback_rps.png", dpi = 108)
 ```
 
 To summarise, all the games used in both experiments have a unique MSNE consisting of randomising across actions. If participants follow this strategy, or simply dont engage in learning how the opponent plays, they woud score 0 on average against both level-1 and level-2 players. Evidence of sustained wins would indicate that participants have learned to exploit patterns in the opponent play. 
+
+
+\newpage
 
 # Results 
 
@@ -374,6 +259,7 @@ ggerrorplot(dat2_6, x = "game.f", y = "early_score", group = 1, color="game.f", 
 
 In Figure\ \@ref(fig:exp2-early-scores), we show the average score across participants in rounds 2-6 of the first interaction with the opponent for each game. These scores are also averaged across the levels of condition (meaning they are irrespective of which opponent players faced first). For both the FWG and SHOOT games, score in the early rounds of the first interaction are significantly higher than 0 for both opponent types. (Level-1 opponent: FWG: t(270) = 4.99, p < 0.0001; SHOOT:  t(270) = 6.66, p < 0.0001; Level-2 opponent: FWG: t(270) = 4.40, p < 0.0001; SHOOT:  t(270) = 3.21, p =0.004 ). Looking more specifically at early scores by type of opponent faced, we confirm the result from the first experiment that it is easier to transfer learning to the more dissimilar game (Shoot) when facing a level 1 opponent. Indeed, while the early scores of FWG for level-1 and level-2 facing players are not significantly different from each other, the score of the players facing the level-1 opponent is indeed almost 0.2 point per round higher than that of players facing level-2 opponents, and the difference is statistically significant ( t(144) = 2.45 , p = 0.01). These early scores have also been adjusted to account for the fact that the shootout game has higher average scores when playing randomly, and therefore this difference is really due to better learning transfer and not due to chance. 
 
+\newpage
 
 # Computational modelling
 
@@ -420,6 +306,9 @@ knitr::include_graphics("../Report/images/exp2_cumScores.png", dpi = 108)
 
 
 
+\newpage
+
+
 # Discussion
 
 In this study, we investigated human learning transfer across games by making human participants play against computer agents with rule-based level-k strategies. We were interested in uncovering evidence for transfer and exploring whether it is modulated by the degree of similarity between games and the sophistication of the agent.
@@ -444,6 +333,7 @@ Our second experimental design allows us to test whether the first explanation h
 
 Our results show that in fact, it was harder to transfer learning when facing level-2 opponents, both comparing first intractions across games and using early rounds analysis. Based on our assumptions, we conclude that the most likely explanation is that participants who are able to beat the opponent and transfer learning are likely to be explicitly modelling the opponent strategy using level-k reasoning, compared to using simple learning rules they uncovered during the ourse of learning. 
 
+\newpage
 
 # Conclusion 
 
@@ -452,3 +342,19 @@ Our online experiments confirm behavioural game theory results, stating that hum
 Having said that, there remains a high degree of heterogeneity between players. There is a high positive association between players who learn to beat the sophisticated and less sophisticated opponents, indicating that some players are more able to detect the patterns in opponent play and learn how to exploit them. Moreover, the computational modelling shows that a significant number of players are still using random strategies in the games. Whether this ability depends on engagement with the experiment or on other characteristics of the learner is an open question that more research in the area would hope to answer. 
 
 
+\newpage
+
+# References
+
+
+```{r create_r-references}
+# r_refs(file = "OM_transfer.bib")
+
+```
+
+\begingroup
+\setlength{\parindent}{-0.5in}
+\setlength{\leftskip}{0.5in}
+
+<div id = "refs"></div>
+\endgroup
