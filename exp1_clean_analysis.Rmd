@@ -178,14 +178,16 @@ lsmip(a1, ~block)
 (ls02 <- lsmeans(a1, "condition"))
 (lsm02 <- update(pairs(ls02, reverse = TRUE), by=NULL, adjust = "holm"))
 
+```
 
+```{r}
 # Pairwise comparison of first halves by game ( first half RPS vs first half WFG scores....)
-(ls1 <- lsmeans(a1, "game.f", by="block"))
+(ls1 <- lsmeans(a1, "block" , by="game.f"))
 (lsm1 <- update(pairs(ls1, reverse = TRUE), by=NULL, adjust = "holm"))
-plot(lsm1,by="block")
 lsmip(a1, game.f ~ block)
+```
 
-
+```{r}
 # Pairwise comparison of each game score by block (first half RPS vs second half RPS....) + Control for family wise error:
 ls2 <- lsmeans(a1, c("block","game.f"))
 (lsm2 <- update(pairs(ls2, reverse = TRUE), by=NULL, adjust = "holm"))
@@ -193,8 +195,10 @@ ls2 <- lsmeans(a1, c("block","game.f"))
 (contr3 <- contrast(ls2, list(G1H1vs0 = c(1,0,0,0,0,0))))
 lsmip(a1, block ~ game.f)
 lsmip(a1, ~ block * game.f)
+```
 
 
+```{r}
 # Pairwise comparison of scores facing the two types of players by game: 
 lsc <- lsmeans(a1, "condition", by="game.f")
 (lsmc <- update(pairs(lsc), by=NULL, adjust = "holm"))

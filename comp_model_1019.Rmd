@@ -1071,11 +1071,11 @@ MBM <- function(par,data,return_value,gamma){
   dimnames(Q_vals_NUM) = list(states_NUM, c("1", "2", "3", "4", "5"))
   
   # Transition Matrices 
-  Transit_RPS = matrix(0,9,9)
+  Transit_RPS = matrix(1/9,9,9)
   dimnames(Transit_RPS) = list(states_RPS, states_RPS)
-  Transit_FWG = matrix(0,9,9)
+  Transit_FWG = matrix(1/9,9,9)
   dimnames(Transit_FWG) = list(states_FWG, states_FWG)
-  Transit_NUM = matrix(0,25,25)
+  Transit_NUM = matrix(1/25,25,25)
   dimnames(Transit_NUM) = list(states_NUM, states_NUM)
   
   
@@ -1199,7 +1199,6 @@ All_results <- rbind(All_results,
                          "eps_no_transfer" = NT_bayes_modelling[[id]]$par[2],
                          
                          
-                         
                          # Q-Learning
                          "QL_BIC" = QL_modelling[[id]]$value + 2*log(150),
                          # beta ->  inverse temperature parameter in softmax choice function
@@ -1264,6 +1263,7 @@ Table_results <- table(All_results[, "condition"],c("random","Bayes Tr","Bayes N
 
  write.csv(Table_results,file="Table_results.csv",row.names = TRUE)
  kable(Table_results)
+ barplot(Table_results)
  
 ```
 ##### Looks like most participants behavior can be explained by QL_states. Bayesian models best explain a few more behaviors, while the others are consistent with random behavior, and only 1 with QL and 1 with S_EWA. 
