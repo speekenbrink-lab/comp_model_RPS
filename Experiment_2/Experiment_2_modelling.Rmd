@@ -67,14 +67,14 @@ exp2_best_response <- function(game,ai_action){
 
 
 ```{r}
-
-exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_transfer) {
+# Assumes within game transfer of opponent model between stages, but boolena for between game transfer. 
+exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,btwn_transfer) {
   
   # dat = data subset for one participant
   # opp_strategy_vec = vector of possible opponent strtegies, model assumes humans restrict opp strategy space to vector   c("level0","level1","level2")
   # return = -2logLik 
   # or "likelihood_by_trial" vector  (for later plotting, etc)
-  # opp_mod_transfer is a boolean. True if distribution of opponent strategies is kept across games. False otherwise. 
+  # btwn_transfer is a boolean. True if distribution of opponent strategies is kept across games. False otherwise. 
   
   # theta = parameter, probability computer will play its best response to what it thinks human is. Truth = 90%. in [0,1].
   # eps: parameter controlling noise in human choice. Probability human will DEVIATE from its best response. In [0,1].
@@ -90,10 +90,13 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_tran
   shootout_predict_opp <- read.csv("shootout_predict_opp.csv")
   
 
-  #lik_opp is a vector that holds and update probability distribution of opp strategy given actions.
+  #lik_opp is a vector that holds and updates probability distribution of opp strategy given actions.
   lik_opp <- matrix(0.0,num_strat, nrow(data))
-  # Initiate prior vector as uniform
-  opp_prior_vec <-rep(1/num_strat, num_strat)
+  
+  # Initiate prior vectors for each opponent as uniform
+  opp_prior_vec <- rep(1/num_strat, num_strat)
+  opp1_prior_vec <-rep(1/num_strat, num_strat)
+  opp2_prior_vec <-rep(1/num_strat, num_strat)
   
   lik_hum <- matrix(0.0,nrow(data))
   # br_hum is vector that stores best responses of human to actions taken by each level-k ai opponent at the round.
@@ -110,22 +113,41 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,opp_mod_tran
       lik_hum[t] <- 1/nopts
       
       ## KEY CODE FOR LEARNING TRANSFER !! (if no OM transfer reset prior to uniform)#####
-      if (!(opp_mod_transfer) || data[t,"stage"] == 1) {
-        opp_prior_vec <- rep(1/num_strat, num_strat)
+      # Round 1 of stage 1 
+      if (data[t,"stage"] == 1) {
+        if (!(btwn_transfer)){
+          opp_prior_vec <- rep(1/num_strat, num_strat)
+        } else { # <- TRANFER 
+          # if there is between game transfer, then the opp_prior_vec should store what was learned about the SECOND opponent 
+          # ...from stage 4 of previous game (or uniform if it is first game of RPS). store that before proceeding
+          opp2_prior_vec <- opp_prior_vec
+          # if between game transfer use stored opp1 prior vector from previous game (or uniform if first game  RPS) 
+          opp_prior_vec <- opp1_prior_vec
+        }
         
       # we are round 1 of stage 2, keep opp vector from round 20 of stage 1  for stage 3
-      } else if (data[t,"stage"] == 2) { 
-        opp1_prior <- opp_prior_vec
-        opp_prior_vec <- rep(1/num_strat, num_strat)
+      } else if (data[t,"stage"] == 2) {
+          # hold the probs vector of Opp type learned in stage 1 in memory and save to temp.
+          opp1_prior_temp <- opp_prior_vec
+          # If no between games transfer reset prior to uniform 
+          if (!(btwn_transfer)){
+            opp_prior_vec <- rep(1/num_strat, num_strat)
+            } else {
+              opp_prior_vec <- opp2_prior_vec
+            }
+
       
-      # we are round 1 of stage 3, keep opp vector from round 20 of stage 2  for stage 4
+      # we are round 1 of stage 3, use vector learned from stage 1, keep opp vector from round 20 of stage 2 for stage 4
       } else if (data[t,"stage"] == 3) { 
-        opp2_prior <- opp_prior_vec
-        opp_prior_vec <- opp1_prior
+        opp2_prior_temp <- opp_prior_vec
+        opp_prior_vec <- opp1_prior_temp
       
-      # We are in round 1 of stage 4, use vector of priors from stage 2
-      }  else if (data[t,"stage"] == 4){ 
-        opp_prior_vec <- opp2_prior
+      # We are in round 1 of stage 4,
+      }  else if (data[t,"stage"] == 4) {
+        # Store what was learned about opponent 1 for nxt game...
+        opp1_prior_vec <- opp_prior_vec
+        # Use what was learned about opponent 2 from stage 2.
+        opp_prior_vec <- opp2_prior_temp
       }
       
       
@@ -203,9 +225,9 @@ for(id in unique(dat_exp2$human_id)) {
   exp2_TR_bayes[[id]] <- list()
   tdat <- subset(dat_exp2,human_id == id)
   
-  # TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0,0), upper = c(1,1), data=tdat, opp_strategy_vec = c("level0","level1","level2") ,return_value = "-2loglik", opp_mod_transfer = TRUE, control=list(trace = FALSE, parallelType=1,parVar = c("best_response")))
+  # TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0,0), upper = c(1,1), data=tdat, opp_strategy_vec = c("level0","level1","level2") ,return_value = "-2loglik", btwn_transfer = TRUE, control=list(trace = FALSE, parallelType=1,parVar = c("best_response")))
 
-  exp2_TR_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  exp2_TR_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", btwn_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
 save(exp2_TR_bayes, file="exp2_TR_bayes.RData")
 
