@@ -68,7 +68,7 @@ exp2_best_response <- function(game,ai_action){
 
 ```{r}
 # Assumes within game transfer of opponent model between stages, but boolena for between game transfer. 
-exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,btwn_transfer) {
+TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer, btwn_transfer) {
   
   # dat = data subset for one participant
   # opp_strategy_vec = vector of possible opponent strtegies, model assumes humans restrict opp strategy space to vector   c("level0","level1","level2")
@@ -115,41 +115,61 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,btwn_transfe
       ## KEY CODE FOR LEARNING TRANSFER !! (if no OM transfer reset prior to uniform)#####
       # Round 1 of stage 1 
       if (data[t,"stage"] == 1) {
-        if (!(btwn_transfer)){
-          opp_prior_vec <- rep(1/num_strat, num_strat)
-        } else { # <- TRANFER 
-          # if there is between game transfer, then the opp_prior_vec should store what was learned about the SECOND opponent 
+        if (btwn_transfer){
+          # if there is between game transfer, then the opp_prior_vec should have stored what was learned about the SECOND opponent 
           # ...from stage 4 of previous game (or uniform if it is first game of RPS). store that before proceeding
           opp2_prior_vec <- opp_prior_vec
           # if between game transfer use stored opp1 prior vector from previous game (or uniform if first game  RPS) 
           opp_prior_vec <- opp1_prior_vec
+
+        } else { # <- No between game TRANSFER 
+          opp_prior_vec <- rep(1/num_strat, num_strat)
         }
         
       # we are round 1 of stage 2, keep opp vector from round 20 of stage 1  for stage 3
       } else if (data[t,"stage"] == 2) {
+        if (within_transfer){
           # hold the probs vector of Opp type learned in stage 1 in memory and save to temp.
           opp1_prior_temp <- opp_prior_vec
-          # If no between games transfer reset prior to uniform 
-          if (!(btwn_transfer)){
+          if (btwn_transfer){
+            # If  between games transfer get prior from opp2 prior saved from last stage of last game 
+            opp_prior_vec <- opp2_prior_vec
+          } else { # if no between transfer start of first interaction with secnd opp should be reset
             opp_prior_vec <- rep(1/num_strat, num_strat)
-            } else {
-              opp_prior_vec <- opp2_prior_vec
-            }
+          }
+          
+        } else { # Assume no between game transfer if no within. reasonable. 
+          opp_prior_vec <- rep(1/num_strat, num_strat)    
+        }
+        
+      # we are round 1 of stage 3
+      } else if (data[t,"stage"] == 3) {
+        if (within_transfer) {
+          # if within_transfer keep opp vector from round 20 of stage 2 for stage 4
+          opp2_prior_temp <- opp_prior_vec
+          # if within_transfer, use what we learned about opp1 in stage 1 as new prior.  
+          opp_prior_vec <- opp1_prior_temp
+          
+        } else { # No within transfer, dont store anything and reset priors
+          opp_prior_vec <- rep(1/num_strat, num_strat)    
+        }
 
-      
-      # we are round 1 of stage 3, use vector learned from stage 1, keep opp vector from round 20 of stage 2 for stage 4
-      } else if (data[t,"stage"] == 3) { 
-        opp2_prior_temp <- opp_prior_vec
-        opp_prior_vec <- opp1_prior_temp
       
       # We are in round 1 of stage 4,
       }  else if (data[t,"stage"] == 4) {
-        # Store what was learned about opponent 1 for nxt game...
-        opp1_prior_vec <- opp_prior_vec
-        # Use what was learned about opponent 2 from stage 2.
-        opp_prior_vec <- opp2_prior_temp
+        if (within_transfer) {
+          # Use what was learned about opponent 2 from stage 2.
+          opp_prior_vec <- opp2_prior_temp
+          if (btwn_transfer) {
+            # Store what was learned about opponent 1 for nxt game...
+           opp1_prior_vec <- opp_prior_vec
+          }
+          
+        } else {
+          opp_prior_vec <- rep(1/num_strat, num_strat)
+        }
+        
       }
-      
       
     # Rounds 2 to End of stage
     } else {
@@ -180,7 +200,7 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,btwn_transfe
           }
         }
         
-      # Get which opponent strategy human current actn maps to (if index = 0 then human current action is br to level-0 comp_strat...)
+      # Get which opponent strategy human current actn maps to (i.e, if index = 0 then human current action is best response to level-0 comp_strat...)
       indices <- which(grepl(as.character(data[t,"h_action"]),br_hum,fixed = TRUE))
 
       # THEN likelihood of current human action is just prior on opponent vec (haven't updated priors with curr opp act yet)
@@ -216,37 +236,53 @@ exp2_naive_bayes <- function(par,data,opp_strategy_vec,return_value,btwn_transfe
 
 ```{r}
 
-exp2_naive_bayes(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik",TRUE)
+TOM_model(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik", within_transfer = TRUE, btwn_transfer = TRUE)
 ```
-## Fitting Bayesian model with transfer  
+## Fitting Bayesian model with between game transfer (as well as within)  
 ```{r}
-exp2_TR_bayes <- list()
+exp2_BT <- list()
 for(id in unique(dat_exp2$human_id)) {
-  exp2_TR_bayes[[id]] <- list()
+  exp2_BT[[id]] <- list()
   tdat <- subset(dat_exp2,human_id == id)
   
   # TR_bayes_modelling[[id]] <- DEoptim(fn=naive_bayes, lower = c(0,0), upper = c(1,1), data=tdat, opp_strategy_vec = c("level0","level1","level2") ,return_value = "-2loglik", btwn_transfer = TRUE, control=list(trace = FALSE, parallelType=1,parVar = c("best_response")))
 
-  exp2_TR_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", btwn_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  exp2_BT[[id]] <- optim(c(0.1,0.1),fn=TOM_model,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", within_transfer = TRUE, btwn_transfer = TRUE,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
-save(exp2_TR_bayes, file="exp2_TR_bayes.RData")
+save(exp2_BT, file="exp2_BT.RData")
 
 ```
 
-## Fitting Bayesian model with NO trnsfer 
+## Fitting ToM model with NO Between transfer (but with transfer within games)
 ```{r}
 
-exp2_NT_bayes <- list()
+exp2_NO_BT <- list()
 for(id in unique(dat_exp2$human_id)) {
-  exp2_NT_bayes[[id]] <- list()
+  exp2_NO_BT[[id]] <- list()
   tdat <- subset(dat_exp2,human_id == id)
   
-  # exp2_NT_bayes[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
+  # exp2_NO_BT[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
 
-  exp2_NT_bayes[[id]] <- optim(c(0.1,0.1),fn=exp2_naive_bayes,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+  exp2_NO_BT[[id]] <- optim(c(0.1,0.1),fn=TOM_model,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", within_transfer = TRUE, btwn_transfer = FALSE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
 }
 
-save(exp2_NT_bayes,file="exp2_NT_bayes.RData")
+save(exp2_NO_BT,file="exp2_NO_BT.RData")
+```
+
+## Fitting Bayesian model with NO Between or within transfer
+```{r}
+
+exp2_NO_Tr <- list()
+for(id in unique(dat_exp2$human_id)) {
+  exp2_NO_Tr[[id]] <- list()
+  tdat <- subset(dat_exp2,human_id == id)
+  
+  # exp2_NO_Tr[[id]] <- DEoptim(fn=naive_bayes, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
+
+  exp2_NO_Tr[[id]] <- optim(c(0.1,0.1),fn=TOM_model,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", within_transfer = FALSE , btwn_transfer = FALSE, lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
+}
+
+save(exp2_NO_Tr,file="exp2_NO_Tr.RData")
 ```
 
 
@@ -613,8 +649,8 @@ save(MBM2_modelling, file="MBM2_modelling.RData")
 
 # Load various modelling tables 
 
-load("exp2_TR_bayes.RData")
-load("exp2_NT_bayes.RData")
+load("exp2_BT.RData")
+load("exp2_NO_BT.RData")
 load("exp2_QLS_modelling.RData")
 load("exp2_SEWA_modelling.RData")
 load("MBM2_modelling.RData")
@@ -629,14 +665,14 @@ exp2_results <- rbind(exp2_results,
                          "Random_BIC" = -2*(180*log(1/3)),
 
                          # Bayesian updating with/without transfer
-                         "Bayes_Tr_BIC" = exp2_TR_bayes[[id]]$value + 2*log(180),
-                         "Bayes_No_Tr_BIC" = exp2_NT_bayes[[id]]$value+ 2*log(180),
+                         "Btwn_TR_BIC" = exp2_BT[[id]]$value + 2*log(180),
+                         "No_Btwn_Tr_BIC" = exp2_NO_BT[[id]]$value+ 2*log(180),
                          # Theta is the parameter governing AI stochasticity. Truth is 0.9
-                         "theta_transfer" = exp2_TR_bayes[[id]]$par[1],
-                         "theta_no_transfer" = exp2_NT_bayes[[id]]$par[1],
+                         "theta_transfer" = exp2_BT[[id]]$par[1],
+                         "theta_no_btw_tr" = exp2_NO_BT[[id]]$par[1],
                          # Epsilone is parameter showing cases where human deviates from predictions about opponent (lower better)
-                         "eps_transfer" = exp2_TR_bayes[[id]]$par[2],
-                         "eps_no_transfer" = exp2_NT_bayes[[id]]$par[2],
+                         "eps_transfer" = exp2_BT[[id]]$par[2],
+                         "eps_no_btwn_tr" = exp2_NO_BT[[id]]$par[2],
 
 
                          # Q-learning with last round states
@@ -669,7 +705,7 @@ write.csv(exp2_results,file="exp2_results.csv",row.names = FALSE)
 ```
 
 ```{r}
-exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA","MBM")[apply(exp2_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
+exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA","MBM")[apply(exp2_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
 
  write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
  kable(exp2_table_results)
@@ -685,9 +721,9 @@ for(id in unique(dat_exp2$human_id)) {
   #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(exp2_results, ID == id)
-  min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,min)
+  min_BIC <- apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,min)
   
-  best_model <- c("random","Bayes Tr","Bayes NT", "QL_states","S_EWA", "MBM")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)]
+  best_model <- c("random","ToM_BT","ToM_NBT", "QL_states","S_EWA", "MBM")[apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)]
   # 
  exp2_model_comp <- rbind(exp2_model_comp ,
                        data.frame(
@@ -697,7 +733,7 @@ for(id in unique(dat_exp2$human_id)) {
                          "Total_score" = tot_score,
                          "Best_model" = best_model,
                          "Total_time" = sum(tdat$human_rt),
-                         "TR_minus_NT_BIC" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
+                         "TR_minus_NT_BIC" = id_results[,"Btwn_TR_BIC"] - id_results[,"No_Btwn_Tr_BIC"],
                          "Rand_minus_best_BIC" =  id_results[,"Random_BIC"] - min_BIC
 
                        ))
