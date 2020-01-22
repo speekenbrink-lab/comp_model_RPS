@@ -86,18 +86,21 @@ Early literature on learning transfer in games has mostly focused on measuring t
 Juvina et al.(2014)  made a similar distinction between what they deemed surface and deep similarities and find that both contribute to positive learning transfer. However, they show that surface similarity is not necessary for deep transfer and can either aid or block this type of transfer depending on whether it leads to congruent or incongruent actions in later games. In a series of experiments using economic signalling games, Cooper & Kagel (2003, 2004, 2008) find that participants who have learned to play according to Nash Equilibrium in one game can transfer this to subsequent games, even though the actions consistent with Nash Equilibrium in later games are different.  They show that this transfer is driven by the emergence of sophisticated players who are able to represent the strategic implications of their actions and reason about the consequences of changed opponent payoffs.  
 
 Most of these studies fail to offer a formal explanation of this transfer or a modelling framework that can explain the experimental observation of transfer between games and generalise it to extensive classes of games. A notable exception is the effort by Haruvy and Stahl (2012) to specify a model of learning where players learn abstract rules that they can generalise and transfer across dissimilar games, rather than action choices that can only be used within the same game. Participants played ten games, presented as 4x4 normal form (matrix payoffs). Their results suggest that subjects do transfer learning over descriptively similar but strategically dissimilar games and that this learning transfer is significant. They also showed that players learn abstract aspects of the game that are then transferred to new settings. Their rule-learning model, based on Stahl (1996), was able to capture participants' dynamic behavior and show that the propensity to select particular rules is perfectly transferred across games.  
- 
-In most of the experimental paradigms we saw, participants were playing other human players either one on one or as a group. In this case, players are learning about the game but so are their opponents. While the approach of matching groups of human players repeatedly to play economic games has ecological validity in recreating environments where social decision making can be studied, it complicates the detection and modelling of strategies used by participants. It is harder to focus on an individual and how her strategies are changing and adapting to the opponent's play if we cannot experimentally control the behaviour of the opponent. It is also difficult to disentangle the process of learning about the opponent from that of learning about the game structure and payoffs. One potential solution is to replace the human opponent with a computerised agent, allowing researchers to manipulate the opponent's behaviour and observe how the human participants adapt their behaviour. For instance, Spiliopoulos (2013) made humans play constant sum games against 3 computer opponents programmed to take advantage of known patterns in human play such as imperfect randomization and heuristics use and found that human participants do adapt to the opponent they are facing. Shachat & Swarthout (2004) made human participants face computer opponents playing various mixed strategies in a zero-sum asymmetric matching pennies game. They found that the players changed their strategies towards exploiting the deviations from the Mixed Strategy Nash Equilibrium (MSNE), and that this exploitation was very likely if the deviation from the MSNE play was high.
 
 
-Still, one of the limitations in studies of how humans adapt to computerised opponents is that they have mostly looked at the ability of players to detect and exploit action-based learning rules. They either used strategies that did not take into account the human participant's histpry of play (as in the case of pre-determined distribution on actions), or strategies that only depended on the player's patterns of past plays, irrespective of the computer play. In other words These strategies did not necessarily take into account the computer's own past plays, or the degree of strategic reasoning of the human player about the computer. Their play was not "human-like" in the sense that humans are not very good at playing specific mixed strategies with any precision of at detecting patterns from long sequences of past play due to cognitive constraints. It is therefore important to have agents that "play like humans", and one way of achieving that is to embed theses agents with human-like theory of mind abilities based on limited steps of recursive reasoning. Simon (1972) explains that humans have limited cognitive capacities and as such cannot be expected to solve computationally intractable problems such as finding Nash equilibria. Instead, they will try to 'satisfice' by choosing a strategy that is adequate in a simplified model of the environment, rather than an optimal one. This concept finds its natural application in 'level-k' theory, first adopted by Stahl & Wilson (1995). It posits that deviations from Nash equilibrium solutions in simple games are explained by the fact that humans have a heterogenous degree of strategic sophistication. At the bottom of the ladder, level-0 players are non-strategic and play either randomly or use a salient strategy in the game environment (Arad & Rubinstein, 2012). Level-1 players are next up the ladder of strategic sophistication and will assume all their opponents belong to the level-0 category and as such will best respond to them given this assumption. Likewise, a level-2 player will choose actions that are the best response given the belief that all opponents are exactly one level below, and so on. 
+Still, one of the commonalities in studies of how humans adapt to computerised opponents is that they have mostly looked at the ability of players to detect and exploit action-based learning rules. The strategies implemented by the computer opponents had a style of play that was not "human-like" in the sense that humans are not very good at playing specific mixed strategies with any precision of at detecting patterns from long sequences of past play due to cognitive constraints. It is therefore important to have agents that "play like humans", and one way of achieving that is to embed theses agents with human-like theory of mind abilities based on limited steps of recursive reasoning. Simon (1972) explains that humans have limited cognitive capacities and as such cannot be expected to solve computationally intractable problems such as finding Nash equilibria. Instead, they will try to 'satisfice' by choosing a strategy that is adequate in a simplified model of the environment, rather than an optimal one. This concept finds its natural application in 'level-k' theory, first adopted by Stahl & Wilson (1995). It posits that deviations from Nash equilibrium solutions in simple games are explained by the fact that humans have a heterogenous degree of strategic sophistication. At the bottom of the ladder, level-0 players are non-strategic and play either randomly or use a salient strategy in the game environment (Arad & Rubinstein, 2012). Level-1 players are next up the ladder of strategic sophistication and will assume all their opponents belong to the level-0 category and as such will best respond to them given this assumption. Likewise, a level-2 player will choose actions that are the best response given the belief that all opponents are exactly one level below, and so on. 
 
-Another potential issue in the experimental paradigms used in the learning transfer literature is the use of social dilemmas and cooperative/competitive settings that may invoke confounding factors in learning and transfer. Social dilemma and coordination games crystallise the conflict between competing with others out of self-interest or cooperating to reach a socially optimal outcome. Playing these games repeatedly implicates important social constructs such as reputation building, trust and other individual psychological attributes such as cooperativeness and inequity aversion. Coordination games also test the ability of choosing the safe self-interested choice compared to the risky cooperative choice and may depend on similar latent factors. As such, these confounding factors may impede teasing out the process of learning an opponent model and that of whether/how these models are transferred. By contrast, purely competitive settings and zero sum games in particular would be more appropriate. They do not incentivize any cooperation, since one player's gain is necessarily the opponent's loss, and are agnostic to trust mechanisms or reputation building. Also choosing games with no pure strategy Nash Equilibrium shift the focus away from learning a normatively optimal action to that of reasoning dynamically about the opponent which is more amenable to modelling learning. Games with unique mixed strategy Nash equilibrium leading to nil average rewards facilitate inferring whether participants have learned to exploit the non-random play of the opponent.
+In this study, we propose to explore opponent modelling and its transfer with the use of computer agents possessing human-like theory of mind abilities with limited degrees of iterated reasoning. The agents will have a fixed strategy played stochastically and will either be level-1 or level-2 behavioral rule, mimicking human theory of mind abilities and the limited recursion depth they exhibit (Goodie et al., 2012). 
+
+Our choice of using computer oponents sinstead of matching groups of participants makes it easier  to disentangle the process of learning about the opponent from that of learning about the game structure and payoffs. When playing against other human opponents,players are learning about the game and the strategy of the opponent simultaneously. Thus, it is harder to focus on an individual and how her strategies are changing and adapting to the opponent's play if we cannot experimentally control the behaviour of the opponent. The use of computer opponents to elicit learning behavior has been explored in the literature with encouraging results.  For instance, Spiliopoulos (2013) made humans play constant sum games against 3 computer opponents programmed to take advantage of known patterns in human play such as imperfect randomization and heuristics use and found that human participants do adapt to the opponent they are facing. Shachat & Swarthout (2004) made human participants face computer opponents playing various mixed strategies in a zero-sum asymmetric matching pennies game. They found that the players changed their strategies towards exploiting the deviations from the Mixed Strategy Nash Equilibrium (MSNE), and that this exploitation was very likely if the deviation from the MSNE play was high.
+
+We chose to use a set of purely competitive zero-sum games that incentivise reasoning about the opponent without introducing social confounding factors. We avoid social dilemma and coordination games that crystallise the conflict between competing with others out of self-interest or cooperating to reach a socially optimal outcome. Playing these games repeatedly implicates important social constructs such as reputation building, trust and other individual psychological attributes such as cooperativeness and inequity aversion. Coordination games also test the ability of choosing the safe self-interested choice compared to the risky cooperative choice and may depend on similar latent factors. As such, these confounding factors may impede teasing out the process of learning an opponent model and that of whether/how these models are transferred. By contrast, purely competitive settings and zero sum games in particular would be more appropriate. They do not incentivize any cooperation, since one player's gain is necessarily the opponent's loss, and are agnostic to trust mechanisms or reputation building. Also choosing games with no pure strategy Nash Equilibrium shift the focus away from learning a normatively optimal action to that of reasoning dynamically about the opponent which is more amenable to modelling learning. Games with unique mixed strategy Nash equilibrium leading to nil average rewards facilitate inferring whether participants have learned to exploit the non-random play of the opponent.
 
 
-To address some of these limitations in the existing literature on learning transfer outlined above, we propose to explore opponent modelling and its transfer with the use of computer agents possessing human-like theory of mind abilities with limited degrees of iterated reasoning. The agents will have a fixed strategy played stochastically and will either be level-1 or level-2 behavioral rule, mimicking human theory of mind abilities and the limited recursion depth they exhibit (Goodie et al., 2012). We also use a set of purely competitive zero-sum games that incentivise reasoning about the opponent without introducing social confounding factors. We measure transfer of learning about the opponent strategy between games with varying degrees of similarity. The first two games we use are identical except for action labels. In one experiment, the third game is strategically similar to the first two but descriptively different, while in a second experiment, we introduce a third game that is dissimilar to the first two in terms of payoff matrix and strategic structure while retaining, like all other games, a unique mixed strategy Nash equilibrium of random action with 0 expected reward against a Nash player. 
+We measure transfer of learning about the opponent strategy between games with varying degrees of similarity. The first two games we use are identical except for action labels. In one experiment, the third game is strategically similar to the first two but descriptively different, while in a second experiment, we introduce a third game that is dissimilar to the first two in terms of payoff matrix and strategic structure while retaining, like all other games, a unique mixed strategy Nash equilibrium of random action with a fixed expected reward against a Nash player. 
 
-Hence, we ran a total of two experiments where human participants played against computer opponents a total of 3 different games. In the following sections, we wwill describe first the methods used in the first experiments and look at the results, then we will do the same for the second experiment. 
+Hence, we ran a total of two experiments where human participants played 3 different games against either 1 (first experiment ) or 2 (second experiment) computer opponents. In the following sections, we will describe each experiment's methodology and results separately, then discuss the findings before using computational modelling to shed light on some of the results. 
+
 
 \newpage
 
@@ -378,7 +381,7 @@ Next, we include for comparison purposes a simple model-free reinforcement learn
 
 $$ V_{t+1}(a) = V_{t}(a) + \alpha*( R_{t}  - V_{t}(a)) $$  
 
-Where $ V_{t}(a) $ is the vlue associated with action $a$ at time $t$, $\alpha$ is the learning rate and $R_{t}$ the reward at time t. Actions are chosen based on action values using a softmax choice rule.  
+Where $V_{t}(a)$ is the vlue associated with action $a$ at time $t$, $\alpha$ is the learning rate and $R_{t}$ the reward at time t. Actions are chosen based on action values using a softmax choice rule.  
 
 We extend this very simple model by adding a state space that consists of last round human and agent play. This is akin to using a Q-learning algorithm [@watkins1992q]. The update rule becomes: 
 
@@ -389,9 +392,9 @@ Where $Q(s_{t},a_{t})$ is the value of taking action $a$ when in state $s$ at ti
 
 
 ### EWA Models 
-Next, we use a self-tuning Experience Weighted attraction model [@ho2004economics]. EWA models are  model of behavior in repeated games, that nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tunign EWA model has been shown to perform better than both these nested models in multiple repeated gmes and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function. 
+Next, we use a self-tuning Experience Weighted attraction model [@ho2004economics]. EWA models particularity is that thet nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tuning EWA model has been shown to perform better than both these nested models in multiple repeated gmes and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function. 
 
-Lt's define some notation in order to write the pdate rule of the self-tuning EWA model. For player i, there are $m_{i}$ strategies, denoted $s_{i}^{j}$ (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted $s_{i}(t)$, while the opponent's strategy at time t is denoted $s_{-i}(t)$. After playing  $s_{i}^{j}$ at time $t$, player i payoff is denoted $\pi_{i}(s_{i}^{j},s_{-i}(t))$, and the actual payoff the player received is $\pi_{i}(t)$. 
+Let's define some notation in order to write the pdate rule of the self-tuning EWA model. For player i, there are $m_{i}$ strategies, denoted $s_{i}^{j}$ (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted $s_{i}(t)$, while the opponent's strategy at time t is denoted $s_{-i}(t)$. After playing  $s_{i}^{j}$ at time $t$, player i payoff is denoted $\pi_{i}(s_{i}^{j},s_{-i}(t))$, and the actual payoff the player received is $\pi_{i}(t)$. 
 
 The EWA model is based on updating "Attractions" for each action over time. For instance, the attraction of strategy $j$ to player $i$ at time $t$ is written $A_{i}^{j}(t)$. Future action choice probabilities are based on these attractions using the softmax playing rule: 
 
@@ -415,46 +418,121 @@ Conversely, In a Between-Transfer model (BT), players are assumed to keep in mem
 
 In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniforme probability of level-k opponent (NT), so no within or between opponent model learning transfer. 
 
-In summary, we fit two ToM models for experiment 1-play ( NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive)
+In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive).In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was best explained by each model.
 
+## Experiment 1 modelling :
 
+```{r load-comp-mod-distrib, include=FALSE}
 
+All_comp_results <- read.csv(file="../All_results.csv")
+exp1_comp_table <- table(All_comp_results[, "condition"],c("random","Bayes Tr","Bayes No Tr","QL", "QL_states","EWA","S_EWA","EWA_states", "MBM")[apply(All_comp_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC","EWA_states_BIC","MBM_BIC")],1,which.min)])
 
-#############################################################
-The Bayesian approach is represented by models whereby agents would update an initial belief over the opponent's strategy consisting of various level-k strategies (resp. 0,1 and 2). We fitted two models in which agents best respond to the opponent model. In the first, the beliefs about the opponent's adopted strategy are transfered across games, and another in which no transfer of opponent models is allowed. 
-
-Next, we fitted a self-tuning EWA model [@ho2004economics] both on action choices without states and with states consisting of lat round play. The self-tuning EWA model generalizes both reinforcement learning as well as fictitious play models and has been proven to do well than equilibrium models in various game situations. Finally, we also included a model-based reinforcement learning approach. whereby the agent learns the transition probabilities between states ans uses that to choose the best action, given the current state and it's belief about what the new state will be. 
-#############################################################
-
-In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was explained by each model. Figure\ \@ref(fig:exp1-comp-models)  shows the results for experiment 1: we can see that while some participant's learning behavior was either random or explained by some of the base models, a significant number of participants in experiment one had learning most consistent with Q-learning conditional on last round play. 
-
-```{r exp1-comp-models, fig.cap = "Histogram of best fitting computational models for experiment 1", fig.align='center'}
-
-knitr::include_graphics("../Report/images/exp1_comp_models.png", dpi = 108)
-
-```
-
-In experiment 2 however, we can see from Figure\ \@ref(fig:exp2-comp-models) that Q-learning with the aforementioned state-space wasn't as successful as the bayesian approached in fitting player's action choices. In experiment 2 when participants faced both level-1 and level-2 agents sequentially, the bayesian models (with or without transfer) were by far the most successful. 
-
-```{r exp2-comp-models, fig.cap = "Histogram of best fitting computational models for experiment 2", fig.align='center'}
-
-knitr::include_graphics("../Report/images/exp2_comp_models.png", dpi = 108)
-
+ #write.csv(exp1_comp_table ,file="exp1_comp_table ",row.names = TRUE)
+ kable(exp1_comp_table)
 ```
 
 
+
+```{r exp1-cum-score-plots, include=FALSE}
+
+exp1_dat = read.csv("../exp1_data.csv")
+exp1_model_comp = read.csv("../exp1_model_comp.csv")
+
+datalist = list()
+i = 0
+new_dat <- setNames(data.frame(matrix(ncol = ncol(exp1_dat), nrow = 0)), colnames(exp1_dat))
+for(id in unique(exp1_dat$human_id)) {
+  i <- i+1
+  tdat <- subset(exp1_dat,human_id == id)
+  tdat$part_num <- i
+  tdat <- within(tdat, acc_sum <- cumsum(tdat$score))
+  datalist[[i]] <- tdat
+}
+
+# Merge all datasets into one 
+new_dat <- dplyr::bind_rows(datalist)
+# or new_dat <- data.table::rbindlist(datalist)
+
+# Add column for time t
+new_dat <- new_dat %>% group_by(exp1_dat$human_id) %>% mutate(t = row_number())
+
+# Add best fitting model per participant
+new_dat <- merge(new_dat, exp1_model_comp[, c("human_id", "Best_model")], by="human_id")
+
+temp <- new_dat[,c("t","acc_sum","Best_model","condition","part_num")]
+dat_by_model <- temp %>% group_by(Best_model,t) %>% 
+  summarize(model_acc_sum = mean(acc_sum))
+
+```
+
+
+
+Figure\ \@ref(fig:exp1-comp-models)  shows the results for experiment 1: we can see that while some participant's learning behavior was either random or explained by some of the base models, a significant number of participants in experiment one had learning most consistent with Q-learning conditional on last round play. 
+
+```{r exp1-comp-models, fig.cap = "Histogram of best fitting computational models by condition for experiment 1", fig.align='center'}
+
+#knitr::include_graphics("../Report/images/exp1_comp_models.png", dpi = 108)
+par(las=2) # make label text perpendicular to axis
+par(mar=c(5,8,4,2)) # increase y-axis margin.
+barplot(exp1_comp_table,
+        horiz =TRUE, # rotate barplot for better visibility 
+        las=1, # change orientation x axis labels 
+        cex.names=0.8, # text label size
+        legend = rownames(exp1_comp_table),
+        beside =TRUE,
+        xlab="Number of participants",
+        args.legend=list( # positioning of legend box 
+        x=ncol(exp1_comp_table) + 4,
+        y=max(colSums(exp1_comp_table)) + 4,
+        bty = "n")
+ )
+
+```
 
 
 Next we compared the performance of players whose actions are consistent with each of our hypothesized models. Figure\ \@ref(fig:exp1-cumScores) shows the average cumulative performance of players across games, for participants grouped by which model best fits their behavior in experiment 1. We can see that participants whose actions are most consistent with learning an opponent model in a Bayesian way had the best overall performance (both with and witout transfer), followed by Q-learning conditional on last round play. EWA, QL and random players had, understandably the lowest performance.
 
-```{r exp1-cumScores, fig.cap = "Average cumulative scores of participants in experiment 1 by best fitting model", fig.align='center'}
+```{r exp1-comp-model, fig.cap = "Histogram of best fitting computational models for experiment 1", fig.align='center'}
+ggplot(data = dat_by_model, aes(x = t, y=model_acc_sum, group = Best_model)) + 
+   geom_line(aes(color= Best_model))
+```
 
-knitr::include_graphics("../Report/images/exp1_cumScores.png", dpi = 108)
+## Experiment 2 
+
+
+```{r, include = FALSE}
+
+exp2_comp_results <- read.csv(file="../Experiment_2/exp2_results.csv")
+exp2_comp_table <- table(exp2_comp_results[, "condition"],c("Random","ToM_BT","ToM_NBT", "ToM_NT", "QL_states","S_EWA","MBM")[apply(exp2_comp_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
+
+ # write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
+ kable(exp2_comp_table)
+```
+
+```{r exp2-comp-models, fig.cap = "Histogram of best fitting computational models by condition for experiment 2", fig.align='center'}
+
+#knitr::include_graphics("../Report/images/exp1_comp_models.png", dpi = 108)
+par(las=2) # make label text perpendicular to axis
+par(mar=c(5,8,4,2)) # increase y-axis margin.
+barplot(exp2_comp_table,
+        horiz =TRUE, # rotate barplot for better visibility 
+        las=1, # change orientation x axis labels 
+        cex.names=0.8, # text label size
+        beside =TRUE,
+        xlab="Number of participants",
+        # legend = c("level-1 opp first","level-2 opp first"),
+        legend = paste0(rownames(exp2_comp_table) , " faced first"),
+        args.legend=list( # positioning of legend box 
+        x=ncol(exp1_comp_table) + 3,
+        y=max(colSums(exp1_comp_table)) -1,
+        bty = "n")
+ )
 
 ```
 
+In experiment 2, we can see from Figure\ \@ref(fig:exp2-comp-models) that Q-learning with the aforementioned state-space wasn't as successful as the bayesian approached in fitting player's action choices. In experiment 2 when participants faced both level-1 and level-2 agents sequentially, the bayesian models (with or without transfer) were by far the most successful. 
 
-Doing the same exercise for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance. 
+Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance. 
 
 
 ```{r exp2-cumScores, fig.cap = "Average cumulative scores of participants in experiment 2 by best fitting model", fig.align='center'}

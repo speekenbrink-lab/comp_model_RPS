@@ -651,6 +651,7 @@ save(MBM2_modelling, file="MBM2_modelling.RData")
 
 load("exp2_BT.RData")
 load("exp2_NO_BT.RData")
+load("exp2_NO_Tr.RData")
 load("exp2_QLS_modelling.RData")
 load("exp2_SEWA_modelling.RData")
 load("MBM2_modelling.RData")
@@ -667,12 +668,16 @@ exp2_results <- rbind(exp2_results,
                          # Bayesian updating with/without transfer
                          "Btwn_TR_BIC" = exp2_BT[[id]]$value + 2*log(180),
                          "No_Btwn_Tr_BIC" = exp2_NO_BT[[id]]$value+ 2*log(180),
+                         "No_Tr_BIC" = exp2_NO_Tr[[id]]$value+ 2*log(180),
+                         
                          # Theta is the parameter governing AI stochasticity. Truth is 0.9
                          "theta_transfer" = exp2_BT[[id]]$par[1],
                          "theta_no_btw_tr" = exp2_NO_BT[[id]]$par[1],
+                         "theta_no_tr" =  exp2_NO_Tr[[id]]$par[1],
                          # Epsilone is parameter showing cases where human deviates from predictions about opponent (lower better)
                          "eps_transfer" = exp2_BT[[id]]$par[2],
                          "eps_no_btwn_tr" = exp2_NO_BT[[id]]$par[2],
+                         "eps_no_tr" = exp2_NO_Tr[[id]]$par[2],
 
 
                          # Q-learning with last round states
@@ -705,7 +710,7 @@ write.csv(exp2_results,file="exp2_results.csv",row.names = FALSE)
 ```
 
 ```{r}
-exp2_table_results <- table(exp2_results[, "condition"],c("random","Bayes Tr","Bayes No Tr", "QL_states","S_EWA","MBM")[apply(exp2_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
+exp2_table_results <- table(exp2_results[, "condition"],c("random","TOM_BT","TOM_NBT", "TOM_NT", "QL_states","S_EWA","MBM")[apply(exp2_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)])
 
  write.csv(exp2_table_results,file="exp2_table_results.csv",row.names = TRUE)
  kable(exp2_table_results)
@@ -721,9 +726,9 @@ for(id in unique(dat_exp2$human_id)) {
   #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
   tr_score <- sum(early_dat$score)
   id_results <- subset(exp2_results, ID == id)
-  min_BIC <- apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,min)
+  min_BIC <- apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","No_Tr_BIC", "QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,min)
   
-  best_model <- c("random","ToM_BT","ToM_NBT", "QL_states","S_EWA", "MBM")[apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)]
+  best_model <- c("random","ToM_BT","ToM_NBT", "ToM_NT","QL_states","S_EWA", "MBM")[apply(id_results[,c("Random_BIC","Btwn_TR_BIC","No_Btwn_Tr_BIC","No_Tr_BIC","QL_states_BIC","EWA_self_BIC","MBM2_BIC")],1,which.min)]
   # 
  exp2_model_comp <- rbind(exp2_model_comp ,
                        data.frame(
