@@ -127,10 +127,10 @@ TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer
         }
         
       # we are round 1 of stage 2, keep opp vector from round 20 of stage 1  for stage 3
-      } else if (data[t,"stage"] == 2) {
-        if (within_transfer){
-          # hold the probs vector of Opp type learned in stage 1 in memory and save to temp.
-          opp1_prior_temp <- opp_prior_vec
+        } else if (data[t,"stage"] == 2) {
+          if (within_transfer){
+            # hold the probs vector of Opp type learned in stage 1 in memory and save to temp.
+            opp1_prior_temp <- opp_prior_vec
           if (btwn_transfer){
             # If  between games transfer get prior from opp2 prior saved from last stage of last game 
             opp_prior_vec <- opp2_prior_vec
@@ -158,12 +158,12 @@ TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer
       # We are in round 1 of stage 4,
       }  else if (data[t,"stage"] == 4) {
         if (within_transfer) {
-          # Use what was learned about opponent 2 from stage 2.
-          opp_prior_vec <- opp2_prior_temp
           if (btwn_transfer) {
             # Store what was learned about opponent 1 for nxt game...
            opp1_prior_vec <- opp_prior_vec
-          }
+          } 
+          # Use what was learned about opponent 2 from stage 2.
+          opp_prior_vec <- opp2_prior_temp
           
         } else {
           opp_prior_vec <- rep(1/num_strat, num_strat)
@@ -173,6 +173,7 @@ TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer
       
     # Rounds 2 to End of stage
     } else {
+      #cat("stage", data[t,"stage"], " opps ",  opp_prior_vec, "\n")
       # get prediction of opponent action from CSV files
       for (strategy in opp_strategy_vec) {
         k = match(strategy,opp_strategy_vec)
@@ -217,7 +218,7 @@ TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer
       opp_prior_vec <- lik_opp[,t]
     }
   # for debugging uncomment the line below
-  #cat(as.character(pred_opp),as.character(data[t,"a_action"]),lik_opp[,t],"\n")
+  #cat(as.character(pred_opp),as.character(data[t,"a_action"]),lik_opp[,t],"/n")
   }
   
   if(return_value == "-2loglik") {
@@ -239,7 +240,7 @@ TOM_model <- function(par, data, opp_strategy_vec, return_value, within_transfer
 TOM_model(c(0.5,0.1),test_data,c("level0","level1","level2"),"-2loglik", within_transfer = TRUE, btwn_transfer = TRUE)
 ```
 ## Fitting Bayesian model with between game transfer (as well as within)  
-```{r}
+```{r, cache=TRUE}
 exp2_BT <- list()
 for(id in unique(dat_exp2$human_id)) {
   exp2_BT[[id]] <- list()
@@ -254,7 +255,7 @@ save(exp2_BT, file="exp2_BT.RData")
 ```
 
 ## Fitting ToM model with NO Between transfer (but with transfer within games)
-```{r}
+```{r, cache=TRUE}
 
 exp2_NO_BT <- list()
 for(id in unique(dat_exp2$human_id)) {
@@ -270,7 +271,7 @@ save(exp2_NO_BT,file="exp2_NO_BT.RData")
 ```
 
 ## Fitting Bayesian model with NO Between or within transfer
-```{r}
+```{r, cache=TRUE}
 
 exp2_NO_Tr <- list()
 for(id in unique(dat_exp2$human_id)) {
@@ -287,7 +288,7 @@ save(exp2_NO_Tr,file="exp2_NO_Tr.RData")
 
 
 ## Fitting Q_learning with state space of possible last round plays 
-```{r}
+```{r, cache=TRUE}
 exp2_QL_states <- function(par,data,return_value,gamma){
   # Par[1] -> beta= inverse temperature parameter in softmax choice function
   # Par[2] -> lambda = learning rate (one per game?)
@@ -384,7 +385,7 @@ exp2_QL_states <- function(par,data,return_value,gamma){
 exp2_QL_states(c(5,0.4),test_data, "-2loglik", 0.0)
 ```
 
-```{r}
+```{r, cache=TRUE}
 exp2_QLS_modelling <- list()
 for(id in unique(dat_exp2$human_id)) {
   exp2_QLS_modelling[[id]] <- list()
@@ -499,7 +500,7 @@ exp2_EWA_self <- function(par,data,return_value){
 ```
 
 ## Fitting SEWA 
-```{r}
+```{r, cache=TRUE}
 
 exp2_SEWA_modelling <- list()
 for(id in unique(dat_exp2$human_id)) {
@@ -627,7 +628,7 @@ MBM_2 <- function(par,data,return_value,gamma){
 
 ```
 
-```{r}
+```{r, cache=TRUE}
 
 #MBM_2(c(2, 0.1), test_data,"-2loglik", gamma = 0.9 )
 
@@ -648,13 +649,13 @@ save(MBM2_modelling, file="MBM2_modelling.RData")
 ```{r}
 
 # Load various modelling tables 
-
-load("exp2_BT.RData")
-load("exp2_NO_BT.RData")
-load("exp2_NO_Tr.RData")
-load("exp2_QLS_modelling.RData")
-load("exp2_SEWA_modelling.RData")
-load("MBM2_modelling.RData")
+# 
+# load("exp2_BT.RData")
+# load("exp2_NO_BT.RData")
+# load("exp2_NO_Tr.RData")
+# load("exp2_QLS_modelling.RData")
+# load("exp2_SEWA_modelling.RData")
+# load("MBM2_modelling.RData")
 
 
 exp2_results <- data.frame()

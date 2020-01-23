@@ -25,7 +25,7 @@ model_comp = read.csv("exp2_model_comp.csv")
 datalist2 = list()
 i = 0
 
-#Build empty datafrsme with same names as original data
+#Build empty dataframe with same names as original data
 exp2_cum_score <- setNames(data.frame(matrix(ncol = ncol(dat_exp2), nrow = 0)), colnames(dat_exp2))
 for(id in unique(dat_exp2$human_id)) {
   i <- i+1

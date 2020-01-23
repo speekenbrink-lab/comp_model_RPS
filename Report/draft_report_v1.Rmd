@@ -77,7 +77,9 @@ options(tinytex.verbose = TRUE)
 # Introduction
 Being able to transfer previously acquired knowledge to a new domain is one of the hallmarks of human intelligence. Humans are naturally endowed with the ability to extract relevant features from a situation, identify the presence of these features in a novel setting and use previously acquired knowledge to adapt to previously unseen challenges using acquired knowledge. More formally, Perkins (1992) defines transfer of learning as the application of skills, knowledge, and/or attitudes that were learned in one situation to another learning situation. This typically human skill has so far eluded modern AI agents. Deep neural networks for instance can do very well on image recognition tasks and can even reach super-human performance levels on video and strategic board games. Yet they struggle to learn as fast or as efficiently as humans do, and more importantly they have a very limited ability to generalize and transfer knowledge to new domains. @lake2017building argue that human learning transfer abilities take advantage of important cognitive building blocks such as an abstract representation of concepts underlying tasks and compositionally structured causal models of the environment.
 
-In this paper, we are specifically interested in the way in which people build and use models of their opponent to facilitate learning transfer, when engaged in situations involving an interaction with strategic considerations. These situations arise frequently such as in negotiations, auctions, strategic planning and all other domains in which theory of mind abilities (Premack & Woodruff, 1978) play a role in determining human behaviour.  
+One way to build abstract representations of the environment when the task involves interactions with others is to build a model of the opponent strategy that may inform what actions they are likely to take next. Once we learn about the opponent's strategy, we can use this knowledge to inform how to best act in novel situations involving a previously encountered opponent. This may lead to very efficient generalization of knowledge, even to situations that are dissimilar to the history of interaction, assuming what we have learned about the opponent is an abstract representation that is not too dependent on the environment of the initial interaction. 
+
+There is evidence that people learn models of the opponents when they play repeated economic games [@stahl1995players], engage in bilateral negotiations [@baarslag2016learning], or simply try to exploit a non random player in chance games such as Rock-Paper-Scissors [@de2012higher]. In this paper, we are specifically interested in the way in which people build and use models of their opponent to facilitate learning transfer, when engaged in situations involving an interaction with strategic considerations. These situations arise frequently such as in negotiations, auctions, strategic planning and all other domains in which theory of mind abilities (Premack & Woodruff, 1978) play a role in determining human behaviour.  
 
 In order to explore learning transfer in strategic settings, it is generally useful to study simple games as a model of more complex interactions. More specifically, we need a framework that allows the study of whether and how a player takes into consideration, over time, the impact of its current and future actions on the future actions of the opponent and the future cumulative rewards. Repeated games, in which players interact repeatedly with the same opponent and have the ability to learn about the opponent's strategies and preferences (Mertens, 1990) are particularly adapted to the task of opponent modelling.
 
@@ -497,6 +499,11 @@ ggplot(data = dat_by_model, aes(x = t, y=model_acc_sum, group = Best_model)) +
    geom_line(aes(color= Best_model))
 ```
 
+
+
+
+
+
 ## Experiment 2 
 
 
@@ -532,12 +539,66 @@ barplot(exp2_comp_table,
 
 In experiment 2, we can see from Figure\ \@ref(fig:exp2-comp-models) that Q-learning with the aforementioned state-space wasn't as successful as the bayesian approached in fitting player's action choices. In experiment 2 when participants faced both level-1 and level-2 agents sequentially, the bayesian models (with or without transfer) were by far the most successful. 
 
-Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance. 
+
+```{r, include=FALSE}
+
+dat_exp2 = read.csv("../Experiment_2/data_exp2.csv")
+
+#Adjust shootout score tor eflect easier game
+dat_exp2$adj_score <- ifelse(as.character(dat_exp2$game) == "shootout", dat_exp2$score - 0.333, dat_exp2$score)
+
+# Load data comparing models BIC for each participant 
+model_comp_2 = read.csv("../Experiment_2/exp2_model_comp.csv")
+
+
+datalist2 = list()
+i = 0
+
+#Build empty dataframe with same names as original data
+exp2_cum_score <- setNames(data.frame(matrix(ncol = ncol(dat_exp2), nrow = 0)), colnames(dat_exp2))
+for(id in unique(dat_exp2$human_id)) {
+  i <- i+1
+  tdat <- subset(dat_exp2,human_id == id)
+  tdat$part_num <- i
+  # NB : USE ADJUSTED SCORE IN SHOOTOUT
+  tdat <- within(tdat, acc_sum <- cumsum(tdat$adj_score))
+  datalist2[[i]] <- tdat
+}
+
+# Merge all datasets into one 
+exp2_cum_score <- dplyr::bind_rows(datalist2)
+# or exp2_cum_score <- data.table::rbindlist(datalist)
+
+# Add column for time t
+exp2_cum_score <- exp2_cum_score %>% group_by(human_id) %>% mutate(t = row_number())
+
+# Participant number as a factor 
+# tdat$part_num <- as.factor(tdat$part_num)
+
+# Add best fitting model per participant
+exp2_cum_score <- merge(exp2_cum_score, model_comp_2[, c("human_id", "Best_model")], by="human_id")
+
+temp2 <- exp2_cum_score[,c("t","acc_sum","Best_model","condition","part_num")]
+dat_by_model_2 <- temp2 %>% group_by(Best_model,t) %>% 
+  summarize(model_acc_sum = mean(acc_sum))
+
+```
 
 
 ```{r exp2-cumScores, fig.cap = "Average cumulative scores of participants in experiment 2 by best fitting model", fig.align='center'}
 
-knitr::include_graphics("../Report/images/exp2_cumScores.png", dpi = 108)
+ggplot(data = dat_by_model_2, aes(x = t, y=model_acc_sum, group = Best_model)) + 
+   geom_line(aes(color= Best_model)) +
+  scale_x_continuous(minor_breaks = seq(0 , 180, 10), breaks = seq(0, 180, 60))
+
+```
+
+Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance. 
+
+
+```{r exp2-cumScores-bis, fig.cap = "Average cumulative scores of participants in experiment 2 by best fitting model", fig.align='center'}
+# 
+# knitr::include_graphics("../Report/images/exp2_cumScores.png", dpi = 108)
 
 ```
 

@@ -288,7 +288,7 @@ Next, we include for comparison purposes a simple model-free reinforcement learn
 
 \[ V_{t+1}(a) = V_{t}(a) + \alpha*( R_{t}  - V_{t}(a)) \]
 
-Where \$ V\_\{t\}(a) \$ is the vlue associated with action \(a\) at time \(t\), \(\alpha\) is the learning rate and \(R_{t}\) the reward at time t. Actions are chosen based on action values using a softmax choice rule.
+Where \(V_{t}(a)\) is the vlue associated with action \(a\) at time \(t\), \(\alpha\) is the learning rate and \(R_{t}\) the reward at time t. Actions are chosen based on action values using a softmax choice rule.
 
 We extend this very simple model by adding a state space that consists of last round human and agent play. This is akin to using a Q-learning algorithm ({\textbf{???}}). The update rule becomes:
 
@@ -299,9 +299,9 @@ Where \(Q(s_{t},a_{t})\) is the value of taking action \(a\) when in state \(s\)
 \hypertarget{ewa-models}{%
 \subsubsection{EWA Models}\label{ewa-models}}
 
-Next, we use a self-tuning Experience Weighted attraction model ({\textbf{???}}). EWA models are model of behavior in repeated games, that nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tunign EWA model has been shown to perform better than both these nested models in multiple repeated gmes and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function.
+Next, we use a self-tuning Experience Weighted attraction model ({\textbf{???}}). EWA models particularity is that thet nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tuning EWA model has been shown to perform better than both these nested models in multiple repeated gmes and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function.
 
-Lt's define some notation in order to write the pdate rule of the self-tuning EWA model. For player i, there are \(m_{i}\) strategies, denoted \(s_{i}^{j}\) (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted \(s_{i}(t)\), while the opponent's strategy at time t is denoted \(s_{-i}(t)\). After playing \(s_{i}^{j}\) at time \(t\), player i payoff is denoted \(\pi_{i}(s_{i}^{j},s_{-i}(t))\), and the actual payoff the player received is \(\pi_{i}(t)\).
+Let's define some notation in order to write the pdate rule of the self-tuning EWA model. For player i, there are \(m_{i}\) strategies, denoted \(s_{i}^{j}\) (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted \(s_{i}(t)\), while the opponent's strategy at time t is denoted \(s_{-i}(t)\). After playing \(s_{i}^{j}\) at time \(t\), player i payoff is denoted \(\pi_{i}(s_{i}^{j},s_{-i}(t))\), and the actual payoff the player received is \(\pi_{i}(t)\).
 
 The EWA model is based on updating ``Attractions'' for each action over time. For instance, the attraction of strategy \(j\) to player \(i\) at time \(t\) is written \(A_{i}^{j}(t)\). Future action choice probabilities are based on these attractions using the softmax playing rule:
 
@@ -323,51 +323,57 @@ Conversely, In a Between-Transfer model (BT), players are assumed to keep in mem
 
 In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniforme probability of level-k opponent (NT), so no within or between opponent model learning transfer.
 
-In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive)
+In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive).In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was best explained by each model.
 
-In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was explained by each model. Figure~\ref{fig:exp1-comp-models} shows the results for experiment 1: we can see that while some participant's learning behavior was either random or explained by some of the base models, a significant number of participants in experiment one had learning most consistent with Q-learning conditional on last round play.
+\hypertarget{experiment-1-modelling}{%
+\subsection{Experiment 1 modelling :}\label{experiment-1-modelling}}
 
-\begin{figure}
-
-{\centering \includegraphics{../Report/images/exp1_comp_models} 
-
-}
-
-\caption{Histogram of best fitting computational models for experiment 1}\label{fig:exp1-comp-models}
-\end{figure}
-
-In experiment 2 however, we can see from Figure~\ref{fig:exp2-comp-models} that Q-learning with the aforementioned state-space wasn't as successful as the bayesian approached in fitting player's action choices. In experiment 2 when participants faced both level-1 and level-2 agents sequentially, the bayesian models (with or without transfer) were by far the most successful.
+Figure~\ref{fig:exp1-comp-models} shows the results for experiment 1: we can see that while some participant's learning behavior was either random or explained by some of the base models, a significant number of participants in experiment one had learning most consistent with Q-learning conditional on last round play.
 
 \begin{figure}
 
-{\centering \includegraphics{../Report/images/exp2_comp_models} 
+{\centering \includegraphics{draft_report_v1_files/figure-latex/exp1-comp-models-1} 
 
 }
 
-\caption{Histogram of best fitting computational models for experiment 2}\label{fig:exp2-comp-models}
+\caption{Histogram of best fitting computational models by condition for experiment 1}\label{fig:exp1-comp-models}
 \end{figure}
 
 Next we compared the performance of players whose actions are consistent with each of our hypothesized models. Figure~\ref{fig:exp1-cumScores} shows the average cumulative performance of players across games, for participants grouped by which model best fits their behavior in experiment 1. We can see that participants whose actions are most consistent with learning an opponent model in a Bayesian way had the best overall performance (both with and witout transfer), followed by Q-learning conditional on last round play. EWA, QL and random players had, understandably the lowest performance.
 
 \begin{figure}
 
-{\centering \includegraphics{../Report/images/exp1_cumScores} 
+{\centering \includegraphics{draft_report_v1_files/figure-latex/exp1-comp-model-1} 
 
 }
 
-\caption{Average cumulative scores of participants in experiment 1 by best fitting model}\label{fig:exp1-cumScores}
+\caption{Histogram of best fitting computational models for experiment 1}\label{fig:exp1-comp-model}
 \end{figure}
 
-Doing the same exercise for experiment 2, we see very similar results looking at Figure~\ref{fig:exp2-cumScores}, in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance.
+\hypertarget{experiment-2}{%
+\subsection{Experiment 2}\label{experiment-2}}
 
 \begin{figure}
 
-{\centering \includegraphics{../Report/images/exp2_cumScores} 
+{\centering \includegraphics{draft_report_v1_files/figure-latex/exp2-comp-models-1} 
+
+}
+
+\caption{Histogram of best fitting computational models by condition for experiment 2}\label{fig:exp2-comp-models}
+\end{figure}
+
+In experiment 2, we can see from Figure~\ref{fig:exp2-comp-models} that Q-learning with the aforementioned state-space wasn't as successful as the bayesian approached in fitting player's action choices. In experiment 2 when participants faced both level-1 and level-2 agents sequentially, the bayesian models (with or without transfer) were by far the most successful.
+
+\begin{figure}
+
+{\centering \includegraphics{draft_report_v1_files/figure-latex/exp2-cumScores-1} 
 
 }
 
 \caption{Average cumulative scores of participants in experiment 2 by best fitting model}\label{fig:exp2-cumScores}
 \end{figure}
+
+Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure~\ref{fig:exp2-cumScores}, in that participants whose behavior was best fit by a bayesian model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expectedm random play as well as EWA were at the bottom of cumulative performance.
 
 \newpage
 
