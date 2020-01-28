@@ -27,7 +27,7 @@ keywords          : "keywords"
 wordcount         : "X"
 
 bibliography      : ["Mendeley.bib"]
-csl               : "apa-6th-edition.csl"
+# csl               : "apa-6th-edition.csl"
 
 floatsintext      : yes
 figurelist        : no
@@ -40,11 +40,9 @@ draft             : no
 fig_caption       : yes
 
 
-# documentclass     : "apa6"
-# classoption       : "man"
+documentclass     : "apa6"
+classoption       : "man"
 output            : papaja::apa6_pdf
-header-includes   :
-  - \shorttitle{}
 ---
 
 ```{r load-packages, include = FALSE}
@@ -77,16 +75,13 @@ options(tinytex.verbose = TRUE)
 # Introduction
 Being able to transfer previously acquired knowledge to a new domain is one of the hallmarks of human intelligence. Humans are naturally endowed with the ability to extract relevant features from a situation, identify the presence of these features in a novel setting and use previously acquired knowledge to adapt to previously unseen challenges using acquired knowledge. More formally, Perkins (1992) defines transfer of learning as the application of skills, knowledge, and/or attitudes that were learned in one situation to another learning situation. This typically human skill has so far eluded modern AI agents. Deep neural networks for instance can do very well on image recognition tasks and can even reach super-human performance levels on video and strategic board games. Yet they struggle to learn as fast or as efficiently as humans do, and more importantly they have a very limited ability to generalize and transfer knowledge to new domains. @Lake2017 argue that human learning transfer abilities take advantage of important cognitive building blocks such as an abstract representation of concepts underlying tasks and compositionally structured causal models of the environment.
 
-One way to build abstract representations of the environment when the task involves interactions with others is to build a model of the opponent strategy that may inform what actions they are likely to take next. Once we learn about the opponent's strategy, we can use this knowledge to inform how to best act in novel situations involving a previously encountered opponent. This may lead to very efficient generalization of knowledge, even to situations that are dissimilar to the history of interaction, assuming what we have learned about the opponent is an abstract representation that is not too dependent on the environment of the initial interaction. There is evidence that people learn models of the opponents when they play repeated economic games [@stahl1995players], engage in bilateral negotiations [@baarslag2016learning], or simply try to exploit a non random player in chance games such as Rock-Paper-Scissors [@de2012higher]. In this paper, we are specifically interested in the way in which people build and use models of their opponent to facilitate learning transfer, when engaged in situations involving an interaction with strategic considerations. These situations arise frequently such as in negotiations, auctions, strategic planning and all other domains in which theory of mind abilities [@Woodruff] play a role in determining human behaviour.  
-
-In order to explore learning transfer in strategic settings, it is generally useful to study simple games as a model of more complex interactions. More specifically, we need a framework that allows the study of whether and how a player takes into consideration, over time, the impact of its current and future actions on the future actions of the opponent and the future cumulative rewards. Repeated games, in which players interact repeatedly with the same opponent and have the ability to learn about the opponent's strategies and preferences [@mertens1990repeated] are particularly adapted to the task of opponent modelling.
+One way to build abstract representations of the environment when the task involves interactions with others is to build a model of the person we are interacting with that may inform what actions they are likely to take next. Once we learn something about them, we can use this knowledge to inform how to best behave in novel situations. This may lead to very efficient generalization of knowledge, even to situations that are dissimilar to the history of interaction, assuming what we have learned about others is an abstract representation that is not too dependent on the environment of the initial interaction. There is evidence that people learn models of their opponents when they play repeated economic games [@stahl1995players], engage in bilateral negotiations [@baarslag2016learning], or simply try to exploit a non random player in chance games such as Rock-Paper-Scissors [@de2012higher]. In this paper, we are specifically interested in the way in which people build and use models of their opponent to facilitate learning transfer, when engaged in situations involving an interaction with strategic considerations. These situations arise frequently such as in negotiations, auctions, strategic planning and all other domains in which theory of mind abilities [@Woodruff] play a role in determining human behaviour.  In order to explore learning transfer in these strategic settings, it is generally useful to study simple games as a model of more complex interactions. More specifically, we need a framework that allows the study of whether and how a player takes into consideration, over time, the impact of its current and future actions on the future actions of the opponent and the future cumulative rewards. Repeated games, in which players interact repeatedly with the same opponent and have the ability to learn about the opponent's strategies and preferences [@mertens1990repeated] are particularly adapted to the task of opponent modelling.
 
 Early literature on learning transfer in games has mostly focused on measuring the proportion of people who play normatively optimal (Nash Equilibria) or salient actions (e.g Risk Dominance) in later games, having had experience with a similar game environment previously. For instance, @ho1998iterated measure transfer as the proportion of players who choose the Nash Equilibrium in later p-beauty contest games, after training on similar games. They find there is no evidence of immediate transfer (Nash equilibrium play in the first round of the new game) but positive structural learning transfer as shown by the faster convergence to equilibrium play by experienced vs non experienced players. @knez2000increasing test learning transfer in players exposed to two games with multiple equilibria sequentially and explore the ability of players to coordinate their actions to choose a particular equilibrium in subsequent games having reached it in prior ones. They distinguish between games that are similar in a purely descriptive way, meaning similar choice labels, identity of players, format and number of action choices; and games that are similar in a strategic sense, meaning similar payoffs from combination of actions, identical equilibrium properties or significant social characteristics of payoffs such as possibility of punishment, need for fairness and cooperative vs competitive settings. They find that transfer of learning (successful coordination) occurs more readily in the presence of both descriptive and strategic similarity. If the games were only strategically similar, then the transfer was much weaker.  
 
 @Juvina2013 made a similar distinction between what they deemed surface and deep similarities and find that both contribute to positive learning transfer. However, they show that surface similarity is not necessary for deep transfer and can either aid or block this type of transfer depending on whether it leads to congruent or incongruent actions in later games. In a series of experiments using economic signalling games [@cooper2003lessons; @Cooper2008] the researchers found that participants who have learned to play according to Nash Equilibrium in one game can transfer this to subsequent games, even though the actions consistent with Nash Equilibrium in later games are different.  They show that this transfer is driven by the emergence of sophisticated players who are able to represent the strategic implications of their actions and reason about the consequences of changed opponent payoffs.  
 
 Most of these studies fail to offer a formal explanation of this transfer or a modelling framework that can explain the experimental observation of transfer between games and generalise it to extensive classes of games. A notable exception is the effort by @Haruvy2012 to specify a model of learning where players learn abstract rules that they can generalise and transfer across dissimilar games, rather than action choices that can only be used within the same game. Participants played ten games, presented as 4x4 normal form (matrix payoffs). Their results suggest that subjects do transfer learning over descriptively similar but strategically dissimilar games and that this learning transfer is significant. They also showed that players learn abstract aspects of the game that are then transferred to new settings. Their rule-learning model, based on @stahl1995players, was able to capture participants' dynamic behavior and show that the propensity to select particular rules is perfectly transferred across games.  
-
 
 Still, one of the commonalities in studies of how humans adapt to computerised opponents is that they have mostly looked at the ability of players to detect and exploit action-based learning rules. The strategies implemented by the computer opponents had a style of play that was not "human-like" in the sense that humans are not very good at playing specific mixed strategies with any precision of at detecting patterns from long sequences of past play due to cognitive constraints. It is therefore important to have agents that "play like humans", and one way of achieving that is to embed theses agents with human-like theory of mind abilities based on limited steps of recursive reasoning. @simon1972theories explains that humans have limited cognitive capacities and as such cannot be expected to solve computationally intractable problems such as finding Nash equilibria. Instead, they will try to 'satisfice' by choosing a strategy that is adequate in a simplified model of the environment, rather than an optimal one. This concept finds its natural application in 'level-k' theory, first adopted by @stahl1995players. It posits that deviations from Nash equilibrium solutions in simple games are explained by the fact that humans have a heterogenous degree of strategic sophistication. At the bottom of the ladder, level-0 players are non-strategic and play either randomly or use a salient strategy in the game environment @arad201211. Level-1 players are next up the ladder of strategic sophistication and will assume all their opponents belong to the level-0 category and as such will best respond to them given this assumption. Likewise, a level-2 player will choose actions that are the best response given the belief that all opponents are exactly one level below, and so on. 
 
@@ -189,13 +184,7 @@ Finally, the analysis showed a significant interaction effects of block by game 
 
 As a measure for learning transfer, we focus on participants’ scores in rounds 2-6, excluding the very first round for which the agent is programmed to play randomly as it has no data on prior rounds on which to build its response. A group of players with no experience of the game are expected to have scores not significantly different from 0. Any significantly positive group average scores would therefore reflect prior learning from past experiences. 
 
-```{r exp1-early-score, fig.cap = "Average scores for rounds 2-6 by game in first experiment", fig.align ='center'}
-
-knitr::include_graphics("../Report/images/exp1_early_scor_game.png", dpi = 108)
-
-```
-
-In Figure\ \@ref(fig:exp1-early-score), the average score across participants by game for rounds 2-6 are plotted. Scores are also averaged across levels of condition. We test the average scores for each game against a hypothesised value of 0 for a non-experienced player using parametric one sample t-tests. As expected for the initial RPS game, the average score is not significantly different from 0 as this is the first game and no learning is possible (t(148.85) = 1.04 , p = 0.89). In FWG, the score is significantly higher than 0 ( t(148.85) = 4.58 , p < 0.0001). This is also the case for the more dissimilar game : NUMBERS ( t(148.85) = 3.00, p = 0.0092). 
+We test the average scores for each game against a hypothesised value of 0 for a non-experienced player using parametric one sample t-tests. As expected for the initial RPS game, the average score is not significantly different from 0 as this is the first game and no learning is possible (t(148.85) = 1.04 , p = 0.89). In FWG, the score is significantly higher than 0 ( t(148.85) = 4.58 , p < 0.0001). This is also the case for the more dissimilar game : NUMBERS ( t(148.85) = 3.00, p = 0.0092). 
 
 Next, we explore whether learning transfer is moderated by the type of opponent and game similarity. Figure\ \@ref(fig: exp1-score-by-opp) shows the mean scores for rounds 2-6 by game for both level-1 and level-2 facing players. Graphically we can see that the pattern is dissimilar between level-1 and level-2 players, and we suspect transfer to be positively associated with similarity and negatively with degree of sophistication of the agent. To test these hypotheses, we run statistical tests on early round scores by game and opponent against the null hypothesis of 0 (no transfer).
 
@@ -308,10 +297,16 @@ apa_lm <- apa_print(exp2_anova)
 
 ```
 
-```{r exp2-score-by-opp, fig.cap="Avergae scores per game by opponcne type", fig.align="center"}
-p3 <- ggerrorplot(dat_int, x = "game.f", y = "int_score", group = 1, color="game.f", desc_stat = "mean_ci",palette = c("#00AFBB", "#E7B800", "#FC4E07"), order = c("RPS", "FWG","SHOOT"), ylab = "Average Scores per game", xlab = "Games")
+```{r exp2-score-by-opp, fig.cap="Average scores per game by opponent type", fig.align="center"}
+# p3 <- ggerrorplot(dat_int, x = "game.f", y = "int_score", group = 1, color="game.f", desc_stat = "mean_ci",palette = c("#00AFBB", "#E7B800", "#FC4E07"), order = c("RPS", "FWG","SHOOT"), ylab = "Average Scores per game", xlab = "Games")
+# 
+# p3 + facet_grid(. ~ opp_type)
 
-p3 + facet_grid(. ~ opp_type)
+p4 <- ggboxplot(dat_int, x = "game.f", y = "int_score", palette = c("#00AFBB", "#E7B800"),order = c("RPS", "FWG","SHOOT"), fill="interaction_lvl",ylab = "Percentage score", xlab = "Games")
+
+p4 + facet_grid(. ~ opp_type)
+
+
 ```
 
 ```{r exp2-anova, results = "asis", echo=FALSE, warning=FALSE}
@@ -356,7 +351,9 @@ group_by(exp2_dat2_6, game.f,opp_type) %>%
 
 ```{r exp2-early-scores, fig.cap="Average early round scores by game for experiment 2", fig.align="center"}
 # plot scores per game 
-ggerrorplot(exp2_dat2_6, x = "game.f", y = "early_score", group = 1, color="game.f", desc_stat = "mean_ci",palette = c("#00AFBB", "#E7B800", "#FC4E07"), order = c("RPS", "FWG","SHOOT"), ylab = "Score", xlab = "Games") 
+p2 <- ggerrorplot(exp2_dat2_6, x = "game.f", y = "early_score", group = 1, color="game.f", desc_stat = "mean_ci",palette = c("#00AFBB", "#E7B800", "#FC4E07"), order = c("RPS", "FWG","SHOOT"), ylab = "Average Score rounds 2-6", xlab = "Games") 
+
+p2 + facet_grid(. ~ opp_type)
 ```
 
 In Figure\ \@ref(fig:exp2-early-scores), we show the average score across participants in rounds 2-6 of the first interaction with the opponent for each game. These scores are also averaged across the levels of condition (meaning they are irrespective of which opponent players faced first). For both the FWG and Shootout games, score in the early rounds of the first interaction are significantly higher than 0 for both opponent types. (Level-1 opponent: FWG: t(270) = 4.99, p < 0.0001; Shootout:  t(270) = 6.66, p < 0.0001; Level-2 opponent: FWG: t(270) = 4.40, p < 0.0001; Shootout:  t(270) = 3.21, p =0.004 ). Looking more specifically at early scores by type of opponent faced, we confirm the result from the first experiment that it is easier to transfer learning to the more dissimilar game (Shootout) when facing a level 1 opponent. Indeed, while the early scores of FWG for level-1 and level-2 facing players are not significantly different from each other, the score of the players facing the level-1 opponent is indeed almost 0.2 point per round higher than that of players facing level-2 opponents, and the difference is statistically significant ( t(144) = 2.45 , p = 0.01). These early scores have also been adjusted to account for the fact that the shootout game has higher average scores when playing randomly, and therefore this difference is really due to better learning transfer and not due to chance. 
@@ -374,27 +371,29 @@ In Figure\ \@ref(fig:exp2-early-scores), we show the average score across partic
 
 # Computational modelling
 
-To gain more insight into how participants played the games against the computer opponents, we compared multiple models of strategies the players may have been using to learn how to beat the opponent.  As a base model, we assume play is random, and each potential action is chosen with equal probability. Note that this corresponds to the Nash equilibrium strategy. 
+To gain more insight into how participants played the games against the computer opponents, we compared multiple models of strategies the players may have been using to learn how to beat the opponent.  As a base model, we assume play is random, and each potential action is chosen with equal probability. Note that this corresponds to the Nash equilibrium strategy. In this sectionn, we will go through the various models we have used and explain how they update what they learn about the game or the opponent 
 
+## Reinforcement Learning 
 
-Next, we include for comparison purposes a simple model-free reinforcement learning algorithm, that reinforces actions that have led to positive rewards, and conversely lowers the likelihood of choosing actions that led to a negative reward, irrespective of any state. We will use a simple temporal difference learning update rule: 
+We include for comparison purposes a simple model-free reinforcement learning algorithm, that reinforces actions that have led to positive rewards, and conversely lowers the likelihood of choosing actions that led to a negative reward, irrespective of any state. We will use a simple temporal difference learning update rule: 
 
 $$ V_{t+1}(a) = V_{t}(a) + \alpha*( R_{t}  - V_{t}(a)) $$  
 
-Where $V_{t}(a)$ is the vlue associated with action $a$ at time $t$, $\alpha$ is the learning rate and $R_{t}$ the reward at time t. Actions are chosen based on action values using a softmax choice rule.  
+Where $V_{t}(a)$ is the value associated with action $a$ at time $t$, $\alpha$ is the learning rate and $R_{t}$ the reward at time t. Actions are chosen based on action values using a softmax choice rule.  
 
 We extend this very simple model by adding a state space that consists of last round human and agent play. This is akin to using a Q-learning algorithm [@watkins1992q]. The update rule becomes: 
 
 $$ Q^{new}(s_{t},a_{t}) = Q(s_{t},a_{t}) + \alpha*( R_{t}  + \gamma*\underset{a}{\max}Q(s_{t+1},a) - Q(s_{t},a_{t}) ) $$  
 
-
 Where $Q(s_{t},a_{t})$ is the value of taking action $a$ when in state $s$ at time $t$,  $\gamma$ is the discount rate applied to future rewards. For instance, $Q(RS,P)$ denotes the value of taking action "Paper" this round if the player's last action was "Rock" and the opponent played "Scissors". This is a much richer model allowing the players to compute the values of actions conditional on past play. 
+
+In experiment 2, we allow this richer model to have a memory of the interaction. In effect, we have a Q-learning model with a state space consisting of last round play, but in one instance, we fit a model (QLS) in which, when encountering an opponent, learning starts anew with no prior knowledge from previous encounters with the opponent used. In another instance, we fit a model in which what was learned about an opponent in the first interaction is transfered to the first round of the second interaction, so there is a within-game trasnfer of Q-values allowed (QLS-within). We fit both models to all participant's data in the second experiment where both opponents are faced. 
 
 
 ### EWA Models 
-Next, we use a self-tuning Experience Weighted attraction model [@ho2004economics]. EWA models particularity is that thet nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tuning EWA model has been shown to perform better than both these nested models in multiple repeated gmes and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function. 
+Next, we use a self-tuning Experience Weighted attraction model [@ho2004economics]. EWA models particularity is that thet nest two seemingly different approaches, namely reinforcement learning and belief learning. Belief based models are based on the assumption that players keep track of the frequency of past plays and best respond to that. In contrast, reinforcement learning does not take into account beliefs about other players, but is such that an action followed by a positive reward is more likely to be repeated than an action followed by a negative reward. The self-tuning EWA model has been shown to perform better than both these nested models in multiple repeated games and has the advantage of having only one free parameter, the inverse temperature in the softmax choice function. 
 
-Let's define some notation in order to write the pdate rule of the self-tuning EWA model. For player i, there are $m_{i}$ strategies, denoted $s_{i}^{j}$ (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted $s_{i}(t)$, while the opponent's strategy at time t is denoted $s_{-i}(t)$. After playing  $s_{i}^{j}$ at time $t$, player i payoff is denoted $\pi_{i}(s_{i}^{j},s_{-i}(t))$, and the actual payoff the player received is $\pi_{i}(t)$. 
+Let's define some notation in order to write the update rule of the self-tuning EWA model. For player i, there are $m_{i}$ strategies, denoted $s_{i}^{j}$ (i.e player i's strategy number j). Strategies actually played by i in period t, are denoted $s_{i}(t)$, while the opponent's strategy at time t is denoted $s_{-i}(t)$. After playing  $s_{i}^{j}$ at time $t$, player i payoff is denoted $\pi_{i}(s_{i}^{j},s_{-i}(t))$, and the actual payoff the player received is $\pi_{i}(t)$. 
 
 The EWA model is based on updating "Attractions" for each action over time. For instance, the attraction of strategy $j$ to player $i$ at time $t$ is written $A_{i}^{j}(t)$. Future action choice probabilities are based on these attractions using the softmax playing rule: 
 
@@ -406,26 +405,26 @@ The attractions are updated over every time step $t$ using the followng update r
 
 $$ A_{i}^{j}(t) =  \frac{\phi . N(t-1) . A_{i}^{j}(t-1) + [ \delta + (1-\delta) . I(s_{i}^{j},s_{i}(t))] . \pi_{i}(s_{i}^{j},s_{-i}(t)) } {\phi . N(t-1) + 1} $$
 
-Here, I(x,y) is the indicator function equla to 1 if $ x = y$ and 0 otherwise. A simple way to think about this update rule is that attractions are multipled by a parameter that represents experince ($N(t-1)$) which is itself decaying by a wight $\phi$. The result is added to either the payoff received (when the indicator function is 0), or to $\delta$ times the foregone payoff (when indicator function is 1).   We can see that setting $\delta = 0$ leads to reinforcement of past actions, while positive and high delta parameters make the update rule take into account foregone payoffs, which is similar to weighted fictitous play [@cheung1994learning]. 
+Here, I(x,y) is the indicator function equal to 1 if $ x = y$ and 0 otherwise. A simple way to think about this update rule is that attractions are multipled by a parameter that represents experince ($N(t-1)$) which is itself decaying by a wight $\phi$. The result is added to either the payoff received (when the indicator function is 0), or to $\delta$ times the foregone payoff (when indicator function is 1).   We can see that setting $\delta = 0$ leads to reinforcement of past actions, while positive and high delta parameters make the update rule take into account foregone payoffs, which is similar to weighted fictitous play [@cheung1994learning]. 
 While the assumption in expanding the update rule above is that $\phi$ and $\delta$ are free parameters [@camerer1997experience], the self-tuning aspect of the model comes from the fact that these are now self-tuned using the formulas expanded in [@ho2004economics]. 
 
 
 ### ToM models 
 
-In this set of models, we assume that participants have a belief that the opponent is a level-k agent, with uniform probability of the level k, and use evidence of past play to update their beliefs in a Bayesian way about the true value of k. We use values of k  in ${0,1,2}$. We distinguish between multiple ToM models based on their ability to keep what was learned about the opponent in memory and hence facilitate transfer. In a No-Between-Transfer (NBT) model, players have no memory of what was learned about the opponent and start every new game assuming each level-k has equal probability. In the context of Experiment 2 where players face both opponents, this model assumes that participants transfer learning within the same game, from the first to the second intraction with the opponent, but are not able to transfer that learning to new games. 
+In this set of models, we assume that participants have a belief that the opponent is a level-k agent, with uniform probability of the level k, and use evidence of past play to update their beliefs in a Bayesian way about the true value of k. We use values of k  in ${0,1,2}$. We distinguish between multiple ToM models based on their ability to keep what was learned about the opponent in memory and hence facilitate transfer. In a No-Between-Transfer (NBT) model, players have no memory of what was learned about the opponent and start every new game assuming each level-k has equal probability. In the context of Experiment 2 where players face both opponents, this model assumes that participants transfer learning within the same game, from the first to the second interaction with the opponent, but are not able to transfer that learning to new games (So within but no between trasnfer) 
 
-Conversely, In a Between-Transfer model (BT), players are assumed to keep in memory what was learned about the type of opponent faced (vector of probabilities of level-k) and use that at the beginning of each new game. In the context of experiment 2, we still assume that within game transfer is still present (from first to second interaction). 
+Conversely, In a Between-Transfer model (BT), players are assumed to keep in memory what was learned about the type of opponent faced (vector of probabilities of level-k) and use that at the beginning of each new game. In the context of experiment 2, we still assume that if between transfer is present, then within game transfer is also present (from first to second interaction). 
 
-In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniforme probability of level-k opponent (NT), so no within or between opponent model learning transfer. 
+We fit the above two models to experiment 1 data. In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniform probability of level-k opponent (NT), so no within or between opponent model learning transfer. 
 
-In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive).In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was best explained by each model.
+In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive). In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was best explained by each model.
 
 ## Experiment 1 modelling :
 
 ```{r load-comp-mod-distrib, include=FALSE}
 
 All_comp_results <- read.csv(file="../All_results.csv")
-exp1_comp_table <- table(All_comp_results[, "condition"],c("random","Bayes Tr","Bayes No Tr","QL", "QL_states","EWA","S_EWA","EWA_states", "MBM")[apply(All_comp_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC","EWA_states_BIC","MBM_BIC")],1,which.min)])
+exp1_comp_table <- table(All_comp_results[, "condition"],c("Random","ToM_BT","ToM_NBT","QL", "QL_states","EWA","S_EWA","EWA_states", "MBM")[apply(All_comp_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC","EWA_states_BIC")],1,which.min)])
 
  #write.csv(exp1_comp_table ,file="exp1_comp_table ",row.names = TRUE)
  kable(exp1_comp_table)
@@ -436,7 +435,36 @@ exp1_comp_table <- table(All_comp_results[, "condition"],c("random","Bayes Tr","
 ```{r exp1-cum-score-plots, include=FALSE}
 
 exp1_dat = read.csv("../exp1_data.csv")
-exp1_model_comp = read.csv("../exp1_model_comp.csv")
+# exp1_model_comp = read.csv("../exp1_model_comp.csv")
+
+exp1_model_comp <- data.frame()
+for(id in unique(exp1_dat$human_id)) {
+  tdat <- subset(exp1_dat,human_id == id)
+  tot_score <- sum(tdat$score)
+  tot_time <- sum(tdat$human_rt)
+  early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg"))
+  #early_dat <- subset(tdat,between(tdat$round,2,6) & (game =="fwg" | game =="numbers") )
+  tr_score <- sum(early_dat$score)
+  id_results <- subset(All_comp_results, ID == id)
+  min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
+  
+  best_model <- c("Random","ToM_BT","ToM_NBT","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
+  # 
+  exp1_model_comp <- rbind(exp1_model_comp,
+                       data.frame(
+                         "human_id" = id,
+                         "condition" = exp1_dat[exp1_dat$human_id==id,"condition"][1],
+                         "Early_game_score" = tr_score,
+                         "Total_score" = tot_score,
+                         "Best_model" = best_model,
+                         "Total_time" = sum(tdat$human_rt),
+                         "TR_minus_NT_BIC" = id_results[,"Bayes_Tr_BIC"] - id_results[,"Bayes_No_Tr_BIC"],
+                         "Rand_minus_best_BIC" =  id_results[,"Random_BIC"] - min_BIC
+
+                       ))
+}
+
+
 
 datalist = list()
 i = 0
@@ -493,8 +521,10 @@ barplot(exp1_comp_table,
 Next we compared the performance of players whose actions are consistent with each of our hypothesized models. Figure\ \@ref(fig:exp1-cumScores) shows the average cumulative performance of players across games, for participants grouped by which model best fits their behavior in experiment 1. We can see that participants whose actions are most consistent with learning a ToM opponent model in a Bayesian way had the best overall performance (both with and witout transfer), followed by Q-learning conditional on last round play. EWA, QL and random players had, understandably the lowest performance.
 
 ```{r exp1-cumScores, fig.cap = "Average cumulative scores of participants in experiment 1 by best fitting model", fig.align='center'}
-ggplot(data = dat_by_model, aes(x = t, y=model_acc_sum, group = Best_model)) + 
-   geom_line(aes(color= Best_model))
+p5 <- ggplot(data = dat_by_model, aes(x = t, y=model_acc_sum, group = Best_model)) + 
+   geom_line(aes(color= Best_model))  
+
+p5+ labs(color = "Best fitting model", x = "Round Number", y="Accumulated score")
 ```
 
 
@@ -585,13 +615,15 @@ dat_by_model_2 <- temp2 %>% group_by(Best_model_2,t) %>%
 
 ```{r exp2-cumScores, fig.cap = "Average cumulative scores of participants in experiment 2 by best fitting model", fig.align='center'}
 
-ggplot(data = dat_by_model_2, aes(x = t, y=avg_acc_sum, group = Best_model_2)) + 
+ p8 <- ggplot(data = dat_by_model_2, aes(x = t, y=avg_acc_sum, group = Best_model_2)) + 
    geom_line(aes(color= Best_model_2)) +
   scale_x_continuous(minor_breaks = seq(0 , 180, 10), breaks = seq(0, 180, 60))
 
+p8 + labs(color = "Best fitting model", x = "Round Number", y="Accumulated score")
+
 ```
 
-Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a ToM model of learning the oppponent strategy had the highest cumulative performance, followed by theose relying on reinforcement learning with a state space of last round play, and as expected random play as well as EWA were at the bottom of cumulative performance. 
+Plotting cumulative scores by best model for experiment 2, we see very similar results looking at Figure\ \@ref(fig:exp2-cumScores), in that participants whose behavior was best fit by a ToM model of learning the oppponent strategy had the highest cumulative performance. Out of these ToM models, the one in which there is within-game but no between-game transfer (NBT) had the best cumulative performance, folowed by a model in which both within and between trasnfer of opponent models is allowed (BT). The next best model from a performance perspective was a Q-learning model with states and within game transfer, followed by ToM models where either players started learning from scratch at each stage of each game (NT) and the model in which they didn't distinguish between opponenets (Naive). As expected, random play as well as self-tuning EWA were at the bottom of cumulative performance. 
 
 
 

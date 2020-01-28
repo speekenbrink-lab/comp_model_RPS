@@ -296,6 +296,8 @@ We extend this very simple model by adding a state space that consists of last r
 
 Where \(Q(s_{t},a_{t})\) is the value of taking action \(a\) when in state \(s\) at time \(t\), \(\gamma\) is the discount rate applied to future rewards. For instance, \(Q(RS,P)\) denotes the value of taking action ``Paper'' this round if the player's last action was ``Rock'' and the opponent played ``Scissors''. This is a much richer model allowing the players to compute the values of actions conditional on past play.
 
+In experiment 2, we allow this richer model to vary. In effect, we have a Q-learning model with a state space consisting of last round play, but in one instance, we fit a model (QLS) in which, when encountering an opponent, learning starts anew with no prior knowledge from previous encounters with the opponent used. In another instance, we fit a model in which what was learned about an opponent in the first interaction is transfered to the first round of the second interaction, so there is a within-game trasnfer of Q-values allowed (QLS-within). We fit both models to all participant's data in the second experiment where both opponents are faced.
+
 \hypertarget{ewa-models}{%
 \subsubsection{EWA Models}\label{ewa-models}}
 
@@ -321,7 +323,7 @@ In this set of models, we assume that participants have a belief that the oppone
 
 Conversely, In a Between-Transfer model (BT), players are assumed to keep in memory what was learned about the type of opponent faced (vector of probabilities of level-k) and use that at the beginning of each new game. In the context of experiment 2, we still assume that within game transfer is still present (from first to second interaction).
 
-In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniforme probability of level-k opponent (NT), so no within or between opponent model learning transfer.
+In experiment two, on top of these two models, we fit two other models: One in which we assume that players don't distinguish between the two opponents faced, so the opponent model vector is never updated (Naive). And finally, we also fit a model in which all stages of the game and all new games start with a fresh uniform probability of level-k opponent (NT), so no within or between opponent model learning transfer.
 
 In summary, we fit two ToM models for experiment 1-play (NBT and BT), and 4 ToM models for experiment 2 ( NBT, BT, NT and Naive).In both experiments, all models were fit to each participant data, with optimal parameters being estimated using maximum likelihood. Using information criteria based Bayesian model comparison (BIC), the best fitting model for each participant was chosen and we compared the number of participants whose behavior was best explained by each model.
 

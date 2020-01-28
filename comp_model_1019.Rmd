@@ -232,7 +232,6 @@ for(id in unique(dat$human_id)) {
   exp1_ToM_NT[[id]] <- list()
   tdat <- subset(dat,human_id == id)
   
-  
   # exp1_ToM_NT[[id]] <- DEoptim(fn=exp1_ToM, lower = c(0.0,0.0), upper = c(1.0,1.0), data=tdat, opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE, control=list(trace = FALSE, parallelType=0,parVar = c("best_response")))
 
   exp1_ToM_NT[[id]] <- optim(c(0.1,0.1),fn=exp1_ToM,gr = NULL, data=tdat,opp_strategy_vec = c("level0","level1","level2"),return_value = "-2loglik", opp_mod_transfer = FALSE ,lower = c(0.01,0.01), upper = c(0.99,0.99), method="L-BFGS-B")
@@ -563,7 +562,7 @@ EWA_par <- function(par,data,return_value){
 ```
 
 ## Fitting Parametric EWA to data 
-```{r}
+```{r, cache =TRUE}
 
 EWA_modelling <- list()
 for(id in unique(dat$human_id)) {
@@ -1010,14 +1009,14 @@ save(MBM_modelling, file="MBM_modelling.RData")
 
 ## Putting results together 
 ```{r}
-# load("exp1_ToM_TR.RData")
-# load("exp1_ToM_NT.RData")
-# load("QL_modelling.RData")
-# load("QL_states_modelling.RData")
-# load("EWA_modelling.RData")
-# load("EWA_self_modelling.RData")
-# load("MBM_modelling.RData")
-# load("EWA_states_modelling.RData")
+load("exp1_ToM_TR.RData")
+load("exp1_ToM_NT.RData")
+load("QL_modelling.RData")
+load("QL_states_modelling.RData")
+load("EWA_modelling.RData")
+load("EWA_self_modelling.RData")
+load("MBM_modelling.RData")
+load("EWA_states_modelling.RData")
 
 
 All_results <- data.frame()
@@ -1030,7 +1029,7 @@ for(id in unique(dat$human_id)) {
                          
                          # Bayesian updating with/without transfer
                          "Bayes_Tr_BIC" = exp1_ToM_TR[[id]]$value + 2*log(150),
-                         "Bayes_No_Tr_BIC" = exp1_ToM_NT[[id]]$value+ 2*log(150),
+                         "Bayes_No_Tr_BIC" = exp1_ToM_NT[[id]]$value + 2*log(150),
                          # Theta is the parameter governing AI stochasticity. Truth is 0.9
                          "theta_transfer" = exp1_ToM_TR[[id]]$par[1],
                          "theta_no_transfer" = exp1_ToM_NT[[id]]$par[1],
@@ -1079,15 +1078,15 @@ for(id in unique(dat$human_id)) {
                          # EWA with states
                          
                          "EWA_states_BIC" = EWA_states_modelling[[id]]$optim$bestval + 1*log(150),
-                         "EWA_states_Lambda" = EWA_states_modelling[[id]]$optim$bestmem[1],
+                         "EWA_states_Lambda" = EWA_states_modelling[[id]]$optim$bestmem[1]
                          
-                         
-                         # MBM 
-                          # MBM BIC
-                         "MBM_BIC" = MBM_modelling[[id]]$optim$bestval + 2*log(150),
-                          # BEta parameter inverse temp in softmax 
-                         "MBM_beta" = MBM_modelling[[id]]$optim$bestmem[1],
-                         "MBM_alpha" = MBM_modelling[[id]]$optim$bestmem[2]
+                         # 
+                         # # MBM 
+                         #  # MBM BIC
+                         # "MBM_BIC" = MBM_modelling[[id]]$optim$bestval + 2*log(150),
+                         #  # BEta parameter inverse temp in softmax 
+                         # "MBM_beta" = MBM_modelling[[id]]$optim$bestmem[1],
+                         # "MBM_alpha" = MBM_modelling[[id]]$optim$bestmem[2]
 
                          ))
 }
@@ -1099,7 +1098,7 @@ write.csv(All_results,file="All_results.csv",row.names = FALSE)
 
 ## Building table of best model per participant
 ```{r}
-Table_results <- table(All_results[, "condition"],c("random","Bayes Tr","Bayes No Tr","QL", "QL_states","EWA","S_EWA","EWA_states", "MBM")[apply(All_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC","EWA_states_BIC","MBM_BIC")],1,which.min)])
+Table_results <- table(All_results[, "condition"],c("random","ToM_BT","ToM_NBT","QL", "QL_states","EWA","S_EWA","EWA_states")[apply(All_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC","EWA_states_BIC")],1,which.min)])
 
  write.csv(Table_results,file="Table_results.csv",row.names = TRUE)
  #kable(Table_results)
@@ -1127,7 +1126,7 @@ for(id in unique(dat$human_id)) {
   id_results <- subset(All_results, ID == id)
   min_BIC <- apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,min)
   
-  best_model <- c("random","Bayes Tr","Bayes NT","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
+  best_model <- c("random","ToM_BT","Bayes NT","QL", "QL_states","EWA","S_EWA")[apply(id_results[,c("Random_BIC","Bayes_Tr_BIC","Bayes_No_Tr_BIC","QL_BIC","QL_states_BIC","EWA_BIC","EWA_self_BIC")],1,which.min)]
   # 
   exp1_model_comp <- rbind(exp1_model_comp,
                        data.frame(
