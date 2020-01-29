@@ -23,8 +23,8 @@ author_note: |
 abstract: |
   Enter abstract here. Each new line herein must be indented, like this line.
   
-keywords          : "keywords"
-wordcount         : "X"
+# keywords          : "keywords"
+# wordcount         : "X"
 
 bibliography      : ["Mendeley.bib"]
 # csl               : "apa-6th-edition.csl"
@@ -41,7 +41,8 @@ fig_caption       : yes
 
 
 documentclass     : "apa6"
-classoption       : "man"
+# classoption       : a4paper
+classoption       : man
 output            : papaja::apa6_pdf
 ---
 
@@ -59,6 +60,7 @@ library(afex)
 library(PairedData)
 library(multcompView)
 library(lsmeans)
+library(magick)
 ```
 
 ```{r analysis-preferences}
@@ -122,7 +124,7 @@ Participants were informed they would play three different games against the sam
 
 ```{r feedback-rps, fig.cap = "Screenshot of the feedback at the end of a round of Rock-Paper-Scissors", fig.align='center'}
 
-knitr::include_graphics("../Report/images/feedback_rps.png", dpi = 108)
+knitr::include_graphics("images/feedback_rps.png")
 
 ```
 
