@@ -71,7 +71,6 @@ dat <- dat %>% mutate(pred_a3_level2 = case_when(
 dat$ai_action_num <- recode(dat$ai_action,"rock" = 1, "paper" = 2, "scissors" = 3, "fire" = 1, "water" = 2, "grass" = 3, "left" = 1, "center" = 2, "right" = 3)
 dat$human_action_num <- recode(dat$human_action,"rock" = 1, "paper" = 2, "scissors" = 3, "fire" = 1, "water" = 2, "grass" = 3, "left" = 1, "center" = 2, "right" = 3)
 
-
 # group data by subjective component id
 
 # if human does not distinguish between players, we can run with these predictions as is
@@ -81,9 +80,8 @@ dat$human_action_num <- recode(dat$human_action,"rock" = 1, "paper" = 2, "scisso
 # if human generalizes over rounds but not games, we need to reset the prior at the start of a game
 # if human does not generalize, we need to reset the prior at the start of each round
 
-
-
 Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("game","stage","no")) {
+  # data is a subset for a single participant
   generalize <- match.arg(generalize)
   alpha <- par[1] # probability that opponent plays according to strategy
   if(length(par) > 1) {
@@ -103,7 +101,7 @@ Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("ga
     mutate_at(vars(starts_with("pred_")),make_probs) 
   
   if(distinct_opponent) {
-    # start of round should not be predictable
+    # start of stage should not be predictable
     dat[dat$round == 1,paste0(paste0("pred_",c("a1_","a2_","a3_")),rep(c("level0","level1","level2"),each=3))] <- 1/3
     # group also by opponent
     dat <- group_by(dat,opp_type)
@@ -143,7 +141,7 @@ Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("ga
            logpost_level1 = lag(log(prior[2]) + cumsum(log(lik_level1)),default=log(prior[2])),
            logpost_level2 = lag(log(prior[3]) + cumsum(log(lik_level2)),default=log(prior[3]))) %>%
     # you can add or subtract any constant from the log-likelihoods; this can aid in precision
-    mutate(min = min(logpost_level0,logpost_level1, logpost_level2)) %>%
+    mutate(min = pmin(logpost_level0,logpost_level1, logpost_level2)) %>%
       mutate(normalize = exp(logpost_level0 - min) + exp(logpost_level1 - min) + exp(logpost_level2 - min)) %>%
         mutate(post_level0 = exp(logpost_level0 - min)/normalize,
                post_level1 = exp(logpost_level1 - min)/normalize,
@@ -189,7 +187,7 @@ Bayes_same_game <- Bayes_same_stage <- Bayes_same_no <-
 
 for(id in levels(dat$human_id)) {
   tdat <- subset(dat,human_id == id)
-  ctrl <- DEoptim.control(NP = 50, itermax=50)
+  ctrl <- DEoptim.control(NP = 20, itermax=50)
   Bayes_same_game[[id]] <- DEoptim(Bayes_model_LL, lower=c(0), upper = c(1), data = tdat,
                                    distinct_opponent = FALSE, generalize = "game",control=ctrl)
   Bayes_same_stage[[id]] <- DEoptim(Bayes_model_LL, lower=c(0), upper = c(1), data = tdat,
@@ -198,7 +196,7 @@ for(id in levels(dat$human_id)) {
                                    distinct_opponent = FALSE, generalize = "no",control=ctrl)
   Bayes_distinct_game[[id]] <- DEoptim(Bayes_model_LL, lower=c(0), upper = c(1), data = tdat,
                                    distinct_opponent = TRUE, generalize = "game",control=ctrl)
-  Bayes_distinct_stage[[id]] <- DEoptim(Bayes_model_LL, lower=c(0), upper = c(1), data = tdat,
+  Bayes_distinct_stage[[id]] <- DEoptim(Bayes_model_LL, lower=c(0,0), upper = c(1,1), data = tdat,
                                         distinct_opponent = TRUE, generalize = "stage",control=ctrl)
   Bayes_distinct_no[[id]] <- DEoptim(Bayes_model_LL, lower=c(0), upper = c(1), data = tdat,
                                  distinct_opponent = TRUE, generalize = "no",control=ctrl)
