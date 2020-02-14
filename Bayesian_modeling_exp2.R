@@ -205,16 +205,21 @@ for(id in levels(dat$human_id)) {
 
 
 # this will implement a pseudo-multinomial-dirichlet
-Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("game","stage","no")) {
+pBayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("game","stage","no")) {
   generalize <- match.arg(generalize)
   alpha <- par[1] # probability that opponent plays according to strategy
   if(length(par) > 1) {
-    beta <- par[2] # probability that human plays according to best response 
+    gamma <- par[2] # probability that human plays according to best response 
+  } else{
+    gamma <- 1 # probability that human plays according to best response 
+  }
+  if(length(par) > 2) {
+    beta <- par[3] # probability that human plays according to best response 
   } else{
     beta <- 1 # probability that human plays according to best response 
   }
   
-  prior <- c(beta,beta,beta) # prior alpha for dirichlet on p(level)
+  prior <- c(gamma,gamma,gamma) # prior alpha for dirichlet on p(level)
   #prior <- prior/sum(prior)
   
   # use alpha to change the "deterministic" predictions
@@ -261,19 +266,24 @@ Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("ga
   
   # normalize the likeihoods to give a pseudo-observation of strategy
   dat <- dat %>%
-    mutate(pseudo_obs_level0 = lik_level0/(lik_level0 + lik_level1 + lik_level2),
-           pseudo_obs_level1 = lik_level1/(lik_level0 + lik_level1 + lik_level2),
-           pseudo_obs_level2 = lik_level2/(lik_level0 + lik_level1 + lik_level2)
-    )
+    # compute normalizing factor
+    mutate(normalize = lik_level0 + lik_level1 + lik_level2) %>%
+    # avoid division by 0
+    mutate(normalize = replace(normalize, normalize == 0, 1)) %>%
+    # normalize
+    mutate(pseudo_obs_level0 = lik_level0/normalize,
+           pseudo_obs_level1 = lik_level1/normalize,
+           pseudo_obs_level2 = lik_level2/normalize)
   
   # use pseudo observations to compute the posterior predictive probability of each level
   dat <- dat %>%
-    mutate(post_level0 = lag(prior[1] + cumsum(lik_level0),default=prior[1]),
-           post_level1 = lag(prior[2] + cumsum(lik_level1),default=prior[2]),
-           post_level2 = lag(prior[3] + cumsum(lik_level2),default=prior[3])) %>%
-    mutate(post_level0 = post_level0/(post_level0 + post_level1 + post_level2),
-           post_level1 = exp(logpost_level1 - min)/normalize,
-           post_level2 = exp(logpost_level2 - min)/normalize)
+    mutate(post_level0 = lag(prior[1] + cumsum(pseudo_obs_level0),default=prior[1]),
+           post_level1 = lag(prior[2] + cumsum(pseudo_obs_level1),default=prior[2]),
+           post_level2 = lag(prior[3] + cumsum(pseudo_obs_level2),default=prior[3])) %>%
+      mutate(normalize = post_level0 + post_level1 + post_level2) %>%
+        mutate(post_level0 = post_level0/normalize,
+               post_level1 = post_level1/normalize,
+               post_level2 = post_level2/normalize)
   
   # use posterior predictive probability to predict probability of each ai and then human action
   dat <- dat %>%
@@ -305,4 +315,25 @@ Bayes_model_LL <- function(par,data,distinct_opponent = TRUE, generalize = c("ga
     )
   
   return(-2*sum(dat$loglik))
+}
+
+pBayes_same_game <- pBayes_same_stage <- pBayes_same_no <- 
+  pBayes_distinct_game <- pBayes_distinct_stage <- pBayes_distinct_no <- 
+  list()
+
+for(id in levels(dat$human_id)) {
+  tdat <- subset(dat,human_id == id)
+  ctrl <- DEoptim.control(NP = 20, itermax=50)
+  pBayes_same_game[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                   distinct_opponent = FALSE, generalize = "game",control=ctrl)
+  pBayes_same_stage[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                    distinct_opponent = FALSE, generalize = "stage",control=ctrl)
+  pBayes_same_no[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                 distinct_opponent = FALSE, generalize = "no",control=ctrl)
+  pBayes_distinct_game[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                       distinct_opponent = TRUE, generalize = "game",control=ctrl)
+  pBayes_distinct_stage[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                        distinct_opponent = TRUE, generalize = "stage",control=ctrl)
+  pBayes_distinct_no[[id]] <- DEoptim(pBayes_model_LL, lower=c(0.1,1), upper = c(1,100), data = tdat,
+                                     distinct_opponent = TRUE, generalize = "no",control=ctrl)
 }
